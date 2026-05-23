@@ -18,7 +18,14 @@ connectDB();
 // =========================
 // MIDDLEWARE
 // =========================
-app.use(cors());
+ app.use(
+  cors({
+    origin: [
+      "https://jaa2-8rr6.vercel.app",
+      "https://jaa2-8rr6-g864u4v2t-leojomar01s-projects.vercel.app",
+    ],
+  })
+);
 
 app.use(express.json());
 
