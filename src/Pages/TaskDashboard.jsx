@@ -106,7 +106,7 @@ export default function TaskDashboard() {
 
 
     <ToastContainer
-      position="top-right"
+      position="bottom-right"
       autoClose={1000}
       newestOnTop
       theme="dark"
