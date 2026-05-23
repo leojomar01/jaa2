@@ -10,6 +10,9 @@ export default function PlayerSizeTable({
   taskId,
 }) {
 
+  const API_URL =
+  process.env.REACT_APP_API_URL;
+
   console.log(
     "TASK ID:",
     taskId
@@ -94,7 +97,7 @@ export default function PlayerSizeTable({
 
       const response =
         await fetch(
-          `http://localhost:5000/api/tasks/${taskId}`
+          `${API_URL}/api/tasks/${taskId}`
         );
 
       console.log(
@@ -155,7 +158,7 @@ export default function PlayerSizeTable({
 
     }
   },
-  [taskId]
+  [taskId,API_URL]
 );
  useEffect(() => {
     if (taskId) {
@@ -340,7 +343,7 @@ export default function PlayerSizeTable({
         // =========================
         const response =
           await fetch(
-            `http://localhost:5000/api/tasks/${taskId}/players`,
+            `${API_URL}/api/tasks/${taskId}/players`,
             {
               method: "POST",
 

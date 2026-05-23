@@ -73,6 +73,10 @@ export default function StatusModal({
   // =========================
   if (!open) return null;
 
+
+    const API_URL =
+  process.env.REACT_APP_API_URL;
+
   // =========================
   // UPDATE DATABASE
   // =========================
@@ -87,7 +91,7 @@ export default function StatusModal({
       // =========================
       const response =
         await fetch(
-          `http://localhost:5000/api/tasks/${taskID}`,
+          `${API_URL}/api/tasks/${taskID}`,
           {
             method: "PUT",
 

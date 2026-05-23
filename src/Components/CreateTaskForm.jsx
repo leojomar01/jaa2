@@ -8,7 +8,10 @@ import {
 } from "react-toastify";
 
 export default function CreateTaskForm() {
+  const API_URL =
+  process.env.REACT_APP_API_URL;
 
+console.log(`${API_URL}/api/tasks`)
   // ==========================
   // IMGBB API KEY
   // ==========================
@@ -337,7 +340,7 @@ export default function CreateTaskForm() {
         // ==========================
         const response =
           await fetch(
-            "http://localhost:5000/api/tasks",
+            `${API_URL}/api/tasks`,
             {
               method:
                 "POST",
@@ -370,6 +373,7 @@ export default function CreateTaskForm() {
     "FAILED TO SAVE"
   );
 
+  
   return;
 }
 

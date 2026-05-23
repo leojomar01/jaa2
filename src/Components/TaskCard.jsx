@@ -105,6 +105,9 @@ export default function TaskCard({
       "text-orange-300";
   }
 
+      const API_URL =
+  process.env.REACT_APP_API_URL;
+
   // =========================
   // DELETE TASK
   // =========================
@@ -123,7 +126,7 @@ export default function TaskCard({
 
         const response =
           await fetch(
-            `http://localhost:5000/api/tasks/${task._id}`,
+            `${API_URL}/api/tasks/${task._id}`,
             {
               method:
                 "DELETE",
