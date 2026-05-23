@@ -77,13 +77,9 @@ export default function PlayerSizeTable({
   // LOAD PLAYER DATA
   // =========================
   useEffect(() => {
-
     if (taskId) {
-
-      loadPlayerData();
-
+      ;
     }
-
   }, [taskId]);
 
   // =========================
