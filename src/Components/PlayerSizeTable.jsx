@@ -1,6 +1,7 @@
 import React, {
   useState,
   useEffect,
+  useCallback,
 } from "react";
 
 import { toast } from "react-toastify";
@@ -76,89 +77,92 @@ export default function PlayerSizeTable({
   // =========================
   // LOAD PLAYER DATA
   // =========================
-  useEffect(() => {
-    if (taskId) {
-      loadPlayerData();
-    }
-  }, [taskId]);
-
+ 
   // =========================
   // FETCH EXISTING DATA
   // =========================
-  const loadPlayerData =
-    async () => {
+ const loadPlayerData = useCallback(
+  async () => {
 
-      try {
+    try {
 
-        setLoadingData(true);
+      setLoadingData(true);
 
-        console.log(
-          "LOADING PLAYER DATA..."
+      console.log(
+        "LOADING PLAYER DATA..."
+      );
+
+      const response =
+        await fetch(
+          `http://localhost:5000/api/tasks/${taskId}`
         );
 
-        const response =
-          await fetch(
-            `http://localhost:5000/api/tasks/${taskId}`
-          );
+      console.log(
+        "GET STATUS:",
+        response.status
+      );
 
-        console.log(
-          "GET STATUS:",
-          response.status
-        );
-
-        if (!response.ok) {
-
-          toast.error(
-            "FAILED TO LOAD DATA"
-          );
-
-          return;
-        }
-
-        const data =
-          await response.json();
-
-        console.log(
-          "TASK DATA:",
-          data
-        );
-
-        // =========================
-        // LOAD PLAYERS
-        // =========================
-        if (
-          data.players &&
-          data.players.length > 0
-        ) {
-
-          setRows([
-            ...data.players,
-            createRow(),
-          ]);
-
-          toast.success(
-            "PLAYER DATA LOADED"
-          );
-
-        }
-
-      } catch (error) {
-
-        console.log(
-          "LOAD ERROR:",
-          error
-        );
+      if (!response.ok) {
 
         toast.error(
-          "ERROR LOADING DATA"
+          "FAILED TO LOAD DATA"
         );
 
-      } finally {
+        return;
+      }
 
-        setLoadingData(false);
+      const data =
+        await response.json();
+
+      console.log(
+        "TASK DATA:",
+        data
+      );
+
+      if (
+        data.players &&
+        data.players.length > 0
+      ) {
+
+        setRows([
+          ...data.players.map(player => ({
+            ...createRow(),
+            ...player,
+          })),
+          createRow(),
+        ]);
+
+        toast.success(
+          "PLAYER DATA LOADED"
+        );
 
       }
-    };
+
+    } catch (error) {
+
+      console.log(
+        "LOAD ERROR:",
+        error
+      );
+
+      toast.error(
+        "ERROR LOADING DATA"
+      );
+
+    } finally {
+
+      setLoadingData(false);
+
+    }
+  },
+  [taskId]
+);
+ useEffect(() => {
+    if (taskId) {
+      loadPlayerData();
+    }
+  }, [taskId,loadPlayerData]);
+
 
   // =========================
   // SIZE COLOR
