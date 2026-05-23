@@ -1,6 +1,7 @@
 import React, {
   useEffect,
   useState,
+  useCallback
 } from "react";
 
 import {
@@ -28,6 +29,8 @@ export default function TaskDashboard() {
   // =========================
   const [tasks, setTasks] =
     useState([]);
+ const API_URL =
+  process.env.REACT_APP_API_URL;
 
   // =========================
   // SHOW CREATE MODAL
@@ -38,12 +41,12 @@ export default function TaskDashboard() {
   // =========================
   // FETCH TASKS
   // =========================
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
 
       const response =
         await fetch(
-          "http://localhost:5000/api/tasks"
+          `${API_URL}/api/tasks`
         );
 
       const data =
@@ -59,14 +62,16 @@ export default function TaskDashboard() {
       );
 
     }
-  };
+    },
+  [API_URL,]
+);
 
   // =========================
   // LOAD TASKS
   // =========================
   useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [fetchTasks]);
 
   // =========================
   // SORT TASKS
