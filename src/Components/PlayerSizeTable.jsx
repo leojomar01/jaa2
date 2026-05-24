@@ -2,21 +2,21 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useMemo,
 } from "react";
 
 import { toast } from "react-toastify";
 
 export default function PlayerSizeTable({
   taskId,
+  CustomerName
 }) {
 
+  // =========================
+  // API URL
+  // =========================
   const API_URL =
-  process.env.REACT_APP_API_URL;
-
-  console.log(
-    "TASK ID:",
-    taskId
-  );
+    process.env.REACT_APP_API_URL;
 
   // =========================
   // CREATE EMPTY ROW
@@ -66,7 +66,7 @@ export default function PlayerSizeTable({
   ];
 
   // =========================
-  // STATE
+  // STATES
   // =========================
   const [rows, setRows] =
     useState([createRow()]);
@@ -77,95 +77,11 @@ export default function PlayerSizeTable({
   const [loadingData, setLoadingData] =
     useState(false);
 
-  // =========================
-  // LOAD PLAYER DATA
-  // =========================
- 
-  // =========================
-  // FETCH EXISTING DATA
-  // =========================
- const loadPlayerData = useCallback(
-  async () => {
+  const [sortBy, setSortBy] =
+    useState("none");
 
-    try {
-
-      setLoadingData(true);
-
-      console.log(
-        "LOADING PLAYER DATA..."
-      );
-
-      const response =
-        await fetch(
-          `${API_URL}/api/tasks/${taskId}`
-        );
-
-      console.log(
-        "GET STATUS:",
-        response.status
-      );
-
-      if (!response.ok) {
-
-        toast.error(
-          "FAILED TO LOAD DATA"
-        );
-
-        return;
-      }
-
-      const data =
-        await response.json();
-
-      console.log(
-        "TASK DATA:",
-        data
-      );
-
-      if (
-        data.players &&
-        data.players.length > 0
-      ) {
-
-        setRows([
-          ...data.players.map(player => ({
-            ...createRow(),
-            ...player,
-          })),
-          createRow(),
-        ]);
-
-        toast.success(
-          "PLAYER DATA LOADED"
-        );
-
-      }
-
-    } catch (error) {
-
-      console.log(
-        "LOAD ERROR:",
-        error
-      );
-
-      toast.error(
-        "ERROR LOADING DATA"
-      );
-
-    } finally {
-
-      setLoadingData(false);
-
-    }
-  },
-  [taskId,API_URL]
-);
- useEffect(() => {
-    if (taskId) {
-      loadPlayerData();
-    }
-  }, [taskId,loadPlayerData]);
-
+  const [sizeFilter, setSizeFilter] =
+    useState("ALL");
 
   // =========================
   // SIZE COLOR
@@ -201,18 +117,219 @@ export default function PlayerSizeTable({
   };
 
   // =========================
-  // COPY
+  // CALCULATE FINAL CHECK
   // =========================
-  const copyToClipboard = (
-    text
-  ) => {
+  const calculateFinalCheck =
+    (row) => {
 
-    navigator.clipboard.writeText(
-      text
+      return (
+        (row.jersey ===
+          "None" ||
+          row.jerseyCheck) &&
+        (row.shorts ===
+          "None" ||
+          row.shortsCheck) &&
+        (row.warmer ===
+          "None" ||
+          row.warmerCheck) &&
+        (row.tshirt ===
+          "None" ||
+          row.tshirtCheck)
+      );
+    };
+
+  // =========================
+  // REMOVE EMPTY ROWS
+  // =========================
+  const getFilteredRows =
+    (targetRows) => {
+
+      return targetRows.filter(
+        (row) => {
+
+          return !(
+            row.surname.trim() ===
+              "" &&
+            row.number.trim() ===
+              ""
+          );
+        }
+      );
+    };
+
+  // =========================
+  // AUTO SAVE
+  // =========================
+  const autoSavePlayers =
+    useCallback(
+      async (
+        updatedRows
+      ) => {
+
+        try {
+
+          const filteredRows =
+            getFilteredRows(
+              updatedRows
+            );
+
+          await fetch(
+            `${API_URL}/api/tasks/${taskId}/players`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body: JSON.stringify({
+                players:
+                  filteredRows,
+              }),
+            }
+          );
+
+          console.log(
+            "AUTO SAVED"
+          );
+
+        } catch (error) {
+
+          console.log(
+            "AUTO SAVE ERROR:",
+            error
+          );
+
+        }
+      },
+      [API_URL, taskId]
     );
 
-    toast.success("COPIED!");
-  };
+  // =========================
+  // LOAD DATA
+  // =========================
+  const loadPlayerData =
+    useCallback(
+      async () => {
+
+        try {
+
+          setLoadingData(
+            true
+          );
+
+          const response =
+            await fetch(
+              `${API_URL}/api/tasks/${taskId}`
+            );
+
+          if (
+            !response.ok
+          ) {
+
+            toast.error(
+              "FAILED TO LOAD DATA"
+            );
+
+            return;
+          }
+
+          const data =
+            await response.json();
+
+          if (
+            data.players &&
+            data.players.length >
+              0
+          ) {
+
+            const loadedRows =
+              data.players.map(
+                (
+                  player
+                ) => ({
+                  ...createRow(),
+                  ...player,
+                  finalCheck:
+                    calculateFinalCheck(
+                      player
+                    ),
+                })
+              );
+
+            setRows([
+              ...loadedRows,
+              createRow(),
+            ]);
+
+            toast.success(
+              "PLAYER DATA LOADED"
+            );
+
+          }
+
+        } catch (error) {
+
+          console.log(
+            error
+          );
+
+          toast.error(
+            "ERROR LOADING DATA"
+          );
+
+        } finally {
+
+          setLoadingData(
+            false
+          );
+
+        }
+      },
+      [API_URL, taskId]
+    );
+
+  // =========================
+  // INITIAL LOAD
+  // =========================
+  useEffect(() => {
+
+    if (taskId) {
+
+      loadPlayerData();
+
+    }
+
+  }, [
+    taskId,
+    loadPlayerData,
+  ]);
+
+  // =========================
+  // COPY
+  // =========================
+  const copyToClipboard =
+    async (text) => {
+
+      try {
+
+        await navigator.clipboard.writeText(
+          text
+        );
+
+        toast.success(
+          "COPIED!"
+        );
+
+      } catch {
+
+        toast.error(
+          "COPY FAILED"
+        );
+
+      }
+    };
 
   // =========================
   // UPDATE FIELD
@@ -223,86 +340,103 @@ export default function PlayerSizeTable({
     value
   ) => {
 
-    const updated = [...rows];
+    setRows(
+      (prevRows) => {
 
-    updated[index][field] =
-      value;
+        const updatedRows =
+          [
+            ...prevRows,
+          ];
 
-    const row =
-      updated[index];
+        updatedRows[index] =
+          {
+            ...updatedRows[
+              index
+            ],
+            [field]:
+              value,
+          };
 
-    // =========================
-    // FINAL CHECK
-    // =========================
-    row.finalCheck =
-      (row.jersey ===
-        "None" ||
-        row.jerseyCheck) &&
-      (row.shorts ===
-        "None" ||
-        row.shortsCheck) &&
-      (row.warmer ===
-        "None" ||
-        row.warmerCheck) &&
-      (row.tshirt ===
-        "None" ||
-        row.tshirtCheck);
+        // UPDATE FINAL CHECK
+        updatedRows[
+          index
+        ].finalCheck =
+          calculateFinalCheck(
+            updatedRows[
+              index
+            ]
+          );
 
-    // =========================
-    // AUTO ADD ROW
-    // =========================
-    const isLastRow =
-      index ===
-      updated.length - 1;
+        // AUTO ADD ROW
+        const isLastRow =
+          index ===
+          updatedRows.length -
+            1;
 
-    const hasData =
-      row.surname.trim() !==
-        "" ||
-      row.number.trim() !==
-        "" ||
-      row.jersey !== "None" ||
-      row.shorts !== "None" ||
-      row.warmer !== "None" ||
-      row.tshirt !== "None";
+        const row =
+          updatedRows[index];
 
-    if (
-      isLastRow &&
-      hasData
-    ) {
+        const hasData =
+          row.surname.trim() !==
+            "" ||
+          row.number.trim() !==
+            "" ||
+          row.jersey !==
+            "None" ||
+          row.shorts !==
+            "None" ||
+          row.warmer !==
+            "None" ||
+          row.tshirt !==
+            "None";
 
-      updated.push(
-        createRow()
-      );
-    }
+        if (
+          isLastRow &&
+          hasData
+        ) {
 
-    setRows(updated);
+          updatedRows.push(
+            createRow()
+          );
+
+        }
+
+        // AUTO SAVE CHECKBOX
+        if (
+          field.includes(
+            "Check"
+          ) ||
+          field.includes(
+            "Print"
+          )
+        ) {
+
+          autoSavePlayers(
+            updatedRows
+          );
+
+        }
+
+        return updatedRows;
+      }
+    );
   };
 
   // =========================
-  // CLEAR BLANK ROWS
+  // CLEAR BLANK
   // =========================
   const clearBlankRows =
     () => {
 
-      const filtered =
-        rows.filter((row) => {
+      const filteredRows =
+        getFilteredRows(
+          rows
+        );
 
-          return !(
-            row.surname.trim() ===
-              "" &&
-            row.number.trim() ===
-              ""
-          );
-        });
-
-      setRows(
-        filtered.length > 0
-          ? [
-              ...filtered,
-              createRow(),
-            ]
-          : [createRow()]
-      );
+      setRows([
+        ...filteredRows,
+        createRow(),
+      ]);
 
       toast.success(
         "BLANK ROWS CLEARED"
@@ -310,7 +444,7 @@ export default function PlayerSizeTable({
     };
 
   // =========================
-  // SAVE TO DATABASE
+  // SAVE
   // =========================
   const saveToDatabase =
     async () => {
@@ -319,28 +453,11 @@ export default function PlayerSizeTable({
 
         setLoading(true);
 
-        // =========================
-        // REMOVE EMPTY ROW
-        // =========================
         const filteredRows =
-          rows.filter((row) => {
+          getFilteredRows(
+            rows
+          );
 
-            return !(
-              row.surname.trim() ===
-                "" &&
-              row.number.trim() ===
-                ""
-            );
-          });
-
-        console.log(
-          "SAVING PLAYERS:",
-          filteredRows
-        );
-
-        // =========================
-        // API REQUEST
-        // =========================
         const response =
           await fetch(
             `${API_URL}/api/tasks/${taskId}/players`,
@@ -359,23 +476,12 @@ export default function PlayerSizeTable({
             }
           );
 
-        console.log(
-          "SAVE STATUS:",
-          response.status
-        );
-
         const data =
           await response.json();
 
-        console.log(
-          "SAVE RESPONSE:",
-          data
-        );
-
-        // =========================
-        // FAILED
-        // =========================
-        if (!response.ok) {
+        if (
+          !response.ok
+        ) {
 
           toast.error(
             data.message ||
@@ -385,9 +491,6 @@ export default function PlayerSizeTable({
           return;
         }
 
-        // =========================
-        // SUCCESS
-        // =========================
         toast.success(
           "PLAYER SIZES SAVED!"
         );
@@ -395,7 +498,6 @@ export default function PlayerSizeTable({
       } catch (error) {
 
         console.log(
-          "SAVE ERROR:",
           error
         );
 
@@ -439,6 +541,116 @@ export default function PlayerSizeTable({
     ],
   ];
 
+  // =========================
+  // SORT + FILTER
+  // =========================
+  const processedRows =
+    useMemo(() => {
+
+      return [...rows]
+        .filter(
+          (
+            row,
+            index
+          ) => {
+
+            const isLastRow =
+              index ===
+              rows.length -
+                1;
+
+            if (
+              isLastRow
+            )
+              return true;
+
+            if (
+              sizeFilter !==
+              "ALL"
+            ) {
+
+              const hasSize =
+                row.jersey ===
+                  sizeFilter ||
+                row.shorts ===
+                  sizeFilter ||
+                row.warmer ===
+                  sizeFilter ||
+                row.tshirt ===
+                  sizeFilter;
+
+              if (
+                !hasSize
+              )
+                return false;
+            }
+
+            return true;
+          }
+        )
+        .sort(
+          (
+            a,
+            b
+          ) => {
+
+            const aEmpty =
+              a.surname ===
+                "" &&
+              a.number ===
+                "";
+
+            const bEmpty =
+              b.surname ===
+                "" &&
+              b.number ===
+                "";
+
+            if (
+              aEmpty
+            )
+              return 1;
+
+            if (
+              bEmpty
+            )
+              return -1;
+
+            if (
+              sortBy ===
+              "name"
+            ) {
+
+              return a.surname.localeCompare(
+                b.surname
+              );
+            }
+
+            if (
+              sortBy ===
+              "number"
+            ) {
+
+              return (
+                Number(
+                  a.number
+                ) -
+                Number(
+                  b.number
+                )
+              );
+            }
+
+            return 0;
+          }
+        );
+
+    }, [
+      rows,
+      sortBy,
+      sizeFilter,
+    ]);
+
   return (
     <div className="min-h-screen bg-[#020b2d] p-4 text-white">
 
@@ -450,7 +662,9 @@ export default function PlayerSizeTable({
           <div className="flex items-center justify-between">
 
             <h1 className="text-3xl font-extrabold">
-              Player Size Information
+              {CustomerName || "Customer"} Size Information
+
+              
             </h1>
 
             <div className="flex gap-3">
@@ -491,14 +705,11 @@ export default function PlayerSizeTable({
                   disabled:opacity-50
                   text-black
                   font-black
-                  shadow-lg
                 "
               >
-
                 {loading
                   ? "SAVING..."
                   : "SAVE"}
-
               </button>
 
             </div>
@@ -507,10 +718,10 @@ export default function PlayerSizeTable({
 
         </div>
 
-        <div className="p-6">
+        <div className="p-3">
 
           {/* ACTIONS */}
-          <div className="flex gap-3 mb-6">
+          <div className="flex flex-wrap gap-3 mb-4">
 
             <button
               onClick={() =>
@@ -520,7 +731,7 @@ export default function PlayerSizeTable({
                 ])
               }
               className="
-                px-6 py-3
+                px-4 py-2
                 rounded-xl
                 bg-green-400
                 hover:bg-green-300
@@ -536,7 +747,7 @@ export default function PlayerSizeTable({
                 clearBlankRows
               }
               className="
-                px-6 py-3
+                px-4 py-2
                 rounded-xl
                 bg-red-400
                 hover:bg-red-300
@@ -546,6 +757,71 @@ export default function PlayerSizeTable({
             >
               CLEAR BLANK
             </button>
+
+            {/* SORT */}
+            <select
+              value={sortBy}
+              onChange={(e) =>
+                setSortBy(
+                  e.target.value
+                )
+              }
+              className="
+                px-4 py-2
+                rounded-xl
+                bg-cyan-400
+                text-black
+                font-bold
+              "
+            >
+              <option value="none">
+                SORT
+              </option>
+
+              <option value="name">
+                SORT NAME
+              </option>
+
+              <option value="number">
+                SORT NUMBER
+              </option>
+
+            </select>
+
+            {/* FILTER */}
+            <select
+              value={
+                sizeFilter
+              }
+              onChange={(e) =>
+                setSizeFilter(
+                  e.target.value
+                )
+              }
+              className="
+                px-4 py-2
+                rounded-xl
+                bg-pink-400
+                text-black
+                font-bold
+              "
+            >
+              <option value="ALL">
+                ALL SIZES
+              </option>
+
+              {sizeOptions.map(
+                (size) => (
+                  <option
+                    key={size}
+                    value={size}
+                  >
+                    {size}
+                  </option>
+                )
+              )}
+
+            </select>
 
           </div>
 
@@ -558,35 +834,35 @@ export default function PlayerSizeTable({
 
                 <tr className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white">
 
-                  <th className="p-3 border">
+                  <th className="p-2 border">
                     No.
                   </th>
 
-                  <th className="p-3 border">
+                  <th className="p-2 border">
                     Surname
                   </th>
 
-                  <th className="p-3 border">
+                  <th className="p-2 border">
                     Number
                   </th>
 
-                  <th className="p-3 border">
+                  <th className="p-2 border">
                     Jersey
                   </th>
 
-                  <th className="p-3 border">
+                  <th className="p-2 border">
                     Shorts
                   </th>
 
-                  <th className="p-3 border">
+                  <th className="p-2 border">
                     Warmer
                   </th>
 
-                  <th className="p-3 border">
+                  <th className="p-2 border">
                     T-Shirt
                   </th>
 
-                  <th className="p-3 border">
+                  <th className="p-2 border">
                     Final
                   </th>
 
@@ -596,7 +872,7 @@ export default function PlayerSizeTable({
 
               <tbody>
 
-                {rows.map(
+                {processedRows.map(
                   (
                     row,
                     index
@@ -607,16 +883,22 @@ export default function PlayerSizeTable({
                       className="
                         odd:bg-[#1b2945]
                         even:bg-[#223250]
+
+                        hover:bg-green-500/10
+                        focus-within:bg-green-500/20
+
+                        transition-all
+                        duration-200
                       "
                     >
 
-                      {/* NUMBER */}
-                      <td className="p-3 border text-center">
+                      {/* NO */}
+                      <td className="p-2 border text-center">
                         {index + 1}
                       </td>
 
                       {/* SURNAME */}
-                      <td className="p-3 border">
+                      <td className="p-2 border">
 
                         <div className="flex gap-2">
 
@@ -634,7 +916,8 @@ export default function PlayerSizeTable({
                               )
                             }
                             className="
-                              w-full p-2
+                              w-full
+                              p-2
                               rounded-xl
                               bg-[#08122f]
                               border
@@ -649,7 +932,7 @@ export default function PlayerSizeTable({
                               )
                             }
                             className="
-                              px-3 py-1
+                              px-3
                               rounded-lg
                               bg-cyan-400
                               text-black
@@ -664,7 +947,7 @@ export default function PlayerSizeTable({
                       </td>
 
                       {/* NUMBER */}
-                      <td className="p-3 border">
+                      <td className="p-2 border">
 
                         <div className="flex gap-2">
 
@@ -682,7 +965,8 @@ export default function PlayerSizeTable({
                               )
                             }
                             className="
-                              w-full p-2
+                              w-full
+                              p-2
                               rounded-xl
                               bg-[#08122f]
                               border
@@ -697,7 +981,7 @@ export default function PlayerSizeTable({
                               )
                             }
                             className="
-                              px-3 py-1
+                              px-3
                               rounded-lg
                               bg-cyan-400
                               text-black
@@ -721,7 +1005,7 @@ export default function PlayerSizeTable({
 
                           <td
                             key={field}
-                            className="p-3 border"
+                            className="p-2 border"
                           >
 
                             <div className="flex flex-col gap-2 items-center">
@@ -753,7 +1037,7 @@ export default function PlayerSizeTable({
                                 }}
                                 className="
                                   w-[100px]
-                                  p-2
+                                  p-1
                                   rounded-lg
                                   font-bold
                                 "
@@ -839,7 +1123,7 @@ export default function PlayerSizeTable({
                       )}
 
                       {/* FINAL */}
-                      <td className="p-3 border text-center">
+                      <td className="p-2 border text-center">
 
                         <span
                           className={`px-4 py-2 rounded-xl font-bold ${
