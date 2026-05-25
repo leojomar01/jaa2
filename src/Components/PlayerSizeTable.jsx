@@ -884,8 +884,8 @@ export default function PlayerSizeTable({
                         odd:bg-[#1b2945]
                         even:bg-[#223250]
 
-                        hover:bg-green-500/10
-                        focus-within:bg-green-500/20
+                        hover:bg-green-500/100
+                        focus-within:bg-green-500/70
 
                         transition-all
                         duration-200
