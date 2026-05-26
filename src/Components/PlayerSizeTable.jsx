@@ -870,24 +870,23 @@ export default function PlayerSizeTable({
                     index
                   ) => (
                     <tr
-                      key={index}
-                      className={`
-                        ${
-                          activeRow ===
-                          index
-                            ? "bg-green-500/50"
-                            : index %
-                                2 ===
-                              0
-                            ? "bg-[#1b2945]"
-                            : "bg-[#223250]"
-                        }
+  key={index}
+  className={`
+    ${
+      row.finalCheck
+        ? "bg-green-600/80 text-white"
+        : activeRow === index
+        ? "bg-blue-500/50"
+        : index % 2 === 0
+        ? "bg-[#1b2945]"
+        : "bg-[#223250]"
+    }
 
-                        hover:bg-green-500/70
-                        transition-all
-                        duration-200
-                      `}
-                    >
+    hover:bg-blue-500/70
+    transition-all
+    duration-200
+  `}
+>
                       {/* NO */}
                       <td className="p-2 border text-center">
                         {index + 1}
