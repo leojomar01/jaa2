@@ -9,9 +9,8 @@ import { toast } from "react-toastify";
 
 export default function PlayerSizeTable({
   taskId,
-  CustomerName
+  CustomerName,
 }) {
-
   // =========================
   // API URL
   // =========================
@@ -83,13 +82,15 @@ export default function PlayerSizeTable({
   const [sizeFilter, setSizeFilter] =
     useState("ALL");
 
+  const [activeRow, setActiveRow] =
+    useState(null);
+
   // =========================
   // SIZE COLOR
   // =========================
   const getSizeColor = (
     size
   ) => {
-
     const colors = {
       None: "#e5e7eb",
 
@@ -117,11 +118,10 @@ export default function PlayerSizeTable({
   };
 
   // =========================
-  // CALCULATE FINAL CHECK
+  // FINAL CHECK
   // =========================
   const calculateFinalCheck =
     (row) => {
-
       return (
         (row.jersey ===
           "None" ||
@@ -143,10 +143,8 @@ export default function PlayerSizeTable({
   // =========================
   const getFilteredRows =
     (targetRows) => {
-
       return targetRows.filter(
         (row) => {
-
           return !(
             row.surname.trim() ===
               "" &&
@@ -165,9 +163,7 @@ export default function PlayerSizeTable({
       async (
         updatedRows
       ) => {
-
         try {
-
           const filteredRows =
             getFilteredRows(
               updatedRows
@@ -189,18 +185,11 @@ export default function PlayerSizeTable({
               }),
             }
           );
-
-          console.log(
-            "AUTO SAVED"
-          );
-
         } catch (error) {
-
           console.log(
             "AUTO SAVE ERROR:",
             error
           );
-
         }
       },
       [API_URL, taskId]
@@ -212,9 +201,7 @@ export default function PlayerSizeTable({
   const loadPlayerData =
     useCallback(
       async () => {
-
         try {
-
           setLoadingData(
             true
           );
@@ -227,7 +214,6 @@ export default function PlayerSizeTable({
           if (
             !response.ok
           ) {
-
             toast.error(
               "FAILED TO LOAD DATA"
             );
@@ -243,7 +229,6 @@ export default function PlayerSizeTable({
             data.players.length >
               0
           ) {
-
             const loadedRows =
               data.players.map(
                 (
@@ -266,11 +251,12 @@ export default function PlayerSizeTable({
             toast.success(
               "PLAYER DATA LOADED"
             );
-
+          } else {
+            setRows([
+              createRow(),
+            ]);
           }
-
         } catch (error) {
-
           console.log(
             error
           );
@@ -278,13 +264,10 @@ export default function PlayerSizeTable({
           toast.error(
             "ERROR LOADING DATA"
           );
-
         } finally {
-
           setLoadingData(
             false
           );
-
         }
       },
       [API_URL, taskId]
@@ -294,13 +277,9 @@ export default function PlayerSizeTable({
   // INITIAL LOAD
   // =========================
   useEffect(() => {
-
     if (taskId) {
-
       loadPlayerData();
-
     }
-
   }, [
     taskId,
     loadPlayerData,
@@ -311,9 +290,7 @@ export default function PlayerSizeTable({
   // =========================
   const copyToClipboard =
     async (text) => {
-
       try {
-
         await navigator.clipboard.writeText(
           text
         );
@@ -321,15 +298,48 @@ export default function PlayerSizeTable({
         toast.success(
           "COPIED!"
         );
-
       } catch {
-
         toast.error(
           "COPY FAILED"
         );
-
       }
     };
+
+  // =========================
+  // RESET CHECKBOXES
+  // =========================
+  const resetChecks = (
+    row,
+    field
+  ) => {
+    if (
+      field === "jersey"
+    ) {
+      row.jerseyPrint = false;
+      row.jerseyCheck = false;
+    }
+
+    if (
+      field === "shorts"
+    ) {
+      row.shortsPrint = false;
+      row.shortsCheck = false;
+    }
+
+    if (
+      field === "warmer"
+    ) {
+      row.warmerPrint = false;
+      row.warmerCheck = false;
+    }
+
+    if (
+      field === "tshirt"
+    ) {
+      row.tshirtPrint = false;
+      row.tshirtCheck = false;
+    }
+  };
 
   // =========================
   // UPDATE FIELD
@@ -339,10 +349,8 @@ export default function PlayerSizeTable({
     field,
     value
   ) => {
-
     setRows(
       (prevRows) => {
-
         const updatedRows =
           [
             ...prevRows,
@@ -357,7 +365,28 @@ export default function PlayerSizeTable({
               value,
           };
 
-        // UPDATE FINAL CHECK
+        // RESET CHECKBOXES
+        if (
+          value ===
+            "None" &&
+          [
+            "jersey",
+            "shorts",
+            "warmer",
+            "tshirt",
+          ].includes(
+            field
+          )
+        ) {
+          resetChecks(
+            updatedRows[
+              index
+            ],
+            field
+          );
+        }
+
+        // RECALCULATE FINAL
         updatedRows[
           index
         ].finalCheck =
@@ -370,8 +399,7 @@ export default function PlayerSizeTable({
         // AUTO ADD ROW
         const isLastRow =
           index ===
-          updatedRows.length -
-            1;
+          updatedRows.length - 1;
 
         const row =
           updatedRows[index];
@@ -394,11 +422,9 @@ export default function PlayerSizeTable({
           isLastRow &&
           hasData
         ) {
-
           updatedRows.push(
             createRow()
           );
-
         }
 
         // AUTO SAVE CHECKBOX
@@ -410,11 +436,9 @@ export default function PlayerSizeTable({
             "Print"
           )
         ) {
-
           autoSavePlayers(
             updatedRows
           );
-
         }
 
         return updatedRows;
@@ -427,7 +451,6 @@ export default function PlayerSizeTable({
   // =========================
   const clearBlankRows =
     () => {
-
       const filteredRows =
         getFilteredRows(
           rows
@@ -448,9 +471,7 @@ export default function PlayerSizeTable({
   // =========================
   const saveToDatabase =
     async () => {
-
       try {
-
         setLoading(true);
 
         const filteredRows =
@@ -482,7 +503,6 @@ export default function PlayerSizeTable({
         if (
           !response.ok
         ) {
-
           toast.error(
             data.message ||
               "FAILED TO SAVE"
@@ -494,9 +514,7 @@ export default function PlayerSizeTable({
         toast.success(
           "PLAYER SIZES SAVED!"
         );
-
       } catch (error) {
-
         console.log(
           error
         );
@@ -504,11 +522,8 @@ export default function PlayerSizeTable({
         toast.error(
           "ERROR SAVING DATA"
         );
-
       } finally {
-
         setLoading(false);
-
       }
     };
 
@@ -546,18 +561,15 @@ export default function PlayerSizeTable({
   // =========================
   const processedRows =
     useMemo(() => {
-
       return [...rows]
         .filter(
           (
             row,
             index
           ) => {
-
             const isLastRow =
               index ===
-              rows.length -
-                1;
+              rows.length - 1;
 
             if (
               isLastRow
@@ -568,7 +580,6 @@ export default function PlayerSizeTable({
               sizeFilter !==
               "ALL"
             ) {
-
               const hasSize =
                 row.jersey ===
                   sizeFilter ||
@@ -593,7 +604,6 @@ export default function PlayerSizeTable({
             a,
             b
           ) => {
-
             const aEmpty =
               a.surname ===
                 "" &&
@@ -620,7 +630,6 @@ export default function PlayerSizeTable({
               sortBy ===
               "name"
             ) {
-
               return a.surname.localeCompare(
                 b.surname
               );
@@ -630,7 +639,6 @@ export default function PlayerSizeTable({
               sortBy ===
               "number"
             ) {
-
               return (
                 Number(
                   a.number
@@ -644,7 +652,6 @@ export default function PlayerSizeTable({
             return 0;
           }
         );
-
     }, [
       rows,
       sortBy,
@@ -653,34 +660,32 @@ export default function PlayerSizeTable({
 
   return (
     <div className="min-h-screen bg-[#020b2d] p-4 text-white">
-
       <div className="max-w-7xl mx-auto bg-[#1b2945] rounded-3xl overflow-hidden shadow-2xl border border-cyan-500/20">
-
         {/* HEADER */}
         <div className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-5">
-
-          <div className="flex items-center justify-between">
-
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <h1 className="text-3xl font-extrabold">
-              {CustomerName || "Customer"} Size Information
-
-              
+              {CustomerName ||
+                "Customer"}{" "}
+              Size Information
             </h1>
 
             <div className="flex gap-3">
-
               <button
                 onClick={
                   loadPlayerData
                 }
                 disabled={
-                  loadingData
+                  loadingData ||
+                  loading
                 }
                 className="
                   px-6 py-3
                   rounded-xl
                   bg-white
                   hover:bg-slate-200
+                  disabled:opacity-50
+                  disabled:cursor-not-allowed
                   text-black
                   font-black
                 "
@@ -695,7 +700,8 @@ export default function PlayerSizeTable({
                   saveToDatabase
                 }
                 disabled={
-                  loading
+                  loading ||
+                  loadingData
                 }
                 className="
                   px-6 py-3
@@ -703,26 +709,24 @@ export default function PlayerSizeTable({
                   bg-cyan-300
                   hover:bg-cyan-200
                   disabled:opacity-50
+                  disabled:cursor-not-allowed
                   text-black
                   font-black
                 "
               >
                 {loading
                   ? "SAVING..."
+                  : loadingData
+                  ? "LOADING..."
                   : "SAVE"}
               </button>
-
             </div>
-
           </div>
-
         </div>
 
         <div className="p-3">
-
           {/* ACTIONS */}
           <div className="flex flex-wrap gap-3 mb-4">
-
             <button
               onClick={() =>
                 setRows([
@@ -758,7 +762,6 @@ export default function PlayerSizeTable({
               CLEAR BLANK
             </button>
 
-            {/* SORT */}
             <select
               value={sortBy}
               onChange={(e) =>
@@ -785,10 +788,8 @@ export default function PlayerSizeTable({
               <option value="number">
                 SORT NUMBER
               </option>
-
             </select>
 
-            {/* FILTER */}
             <select
               value={
                 sizeFilter
@@ -820,20 +821,14 @@ export default function PlayerSizeTable({
                   </option>
                 )
               )}
-
             </select>
-
           </div>
 
           {/* TABLE */}
           <div className="overflow-x-auto rounded-2xl border border-cyan-500/20">
-
             <table className="w-full min-w-[1150px] border-collapse text-sm">
-
               <thead>
-
                 <tr className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white">
-
                   <th className="p-2 border">
                     No.
                   </th>
@@ -865,33 +860,34 @@ export default function PlayerSizeTable({
                   <th className="p-2 border">
                     Final
                   </th>
-
                 </tr>
-
               </thead>
 
               <tbody>
-
                 {processedRows.map(
                   (
                     row,
                     index
                   ) => (
-
                     <tr
                       key={index}
-                      className="
-                        odd:bg-[#1b2945]
-                        even:bg-[#223250]
+                      className={`
+                        ${
+                          activeRow ===
+                          index
+                            ? "bg-green-500/50"
+                            : index %
+                                2 ===
+                              0
+                            ? "bg-[#1b2945]"
+                            : "bg-[#223250]"
+                        }
 
-                        hover:bg-green-500/100
-                        focus-within:bg-green-500/70
-
+                        hover:bg-green-500/70
                         transition-all
                         duration-200
-                      "
+                      `}
                     >
-
                       {/* NO */}
                       <td className="p-2 border text-center">
                         {index + 1}
@@ -899,12 +895,15 @@ export default function PlayerSizeTable({
 
                       {/* SURNAME */}
                       <td className="p-2 border">
-
                         <div className="flex gap-2">
-
                           <input
                             value={
                               row.surname
+                            }
+                            onFocus={() =>
+                              setActiveRow(
+                                index
+                              )
                             }
                             onChange={(
                               e
@@ -941,19 +940,20 @@ export default function PlayerSizeTable({
                           >
                             COPY
                           </button>
-
                         </div>
-
                       </td>
 
                       {/* NUMBER */}
                       <td className="p-2 border">
-
                         <div className="flex gap-2">
-
                           <input
                             value={
                               row.number
+                            }
+                            onFocus={() =>
+                              setActiveRow(
+                                index
+                              )
                             }
                             onChange={(
                               e
@@ -990,9 +990,7 @@ export default function PlayerSizeTable({
                           >
                             COPY
                           </button>
-
                         </div>
-
                       </td>
 
                       {/* SIZE FIELDS */}
@@ -1002,19 +1000,21 @@ export default function PlayerSizeTable({
                           checkField,
                           printField,
                         ]) => (
-
                           <td
                             key={field}
                             className="p-2 border"
                           >
-
                             <div className="flex flex-col gap-2 items-center">
-
                               <select
                                 value={
                                   row[
                                     field
                                   ]
+                                }
+                                onFocus={() =>
+                                  setActiveRow(
+                                    index
+                                  )
                                 }
                                 onChange={(
                                   e
@@ -1042,7 +1042,6 @@ export default function PlayerSizeTable({
                                   font-bold
                                 "
                               >
-
                                 {sizeOptions.map(
                                   (
                                     size
@@ -1061,19 +1060,33 @@ export default function PlayerSizeTable({
                                     </option>
                                   )
                                 )}
-
                               </select>
 
                               <div className="flex gap-2 text-xs">
-
+                                {/* PRINT */}
                                 <label className="flex items-center gap-1">
-
                                   <input
                                     type="checkbox"
+                                    disabled={
+                                      row[
+                                        field
+                                      ] ===
+                                      "None"
+                                    }
                                     checked={
                                       row[
-                                        printField
-                                      ]
+                                        field
+                                      ] ===
+                                      "None"
+                                        ? false
+                                        : row[
+                                            printField
+                                          ]
+                                    }
+                                    onFocus={() =>
+                                      setActiveRow(
+                                        index
+                                      )
                                     }
                                     onChange={(
                                       e
@@ -1087,17 +1100,32 @@ export default function PlayerSizeTable({
                                   />
 
                                   PRINT
-
                                 </label>
 
+                                {/* DONE */}
                                 <label className="flex items-center gap-1">
-
                                   <input
                                     type="checkbox"
+                                    disabled={
+                                      row[
+                                        field
+                                      ] ===
+                                      "None"
+                                    }
                                     checked={
                                       row[
-                                        checkField
-                                      ]
+                                        field
+                                      ] ===
+                                      "None"
+                                        ? false
+                                        : row[
+                                            checkField
+                                          ]
+                                    }
+                                    onFocus={() =>
+                                      setActiveRow(
+                                        index
+                                      )
                                     }
                                     onChange={(
                                       e
@@ -1111,20 +1139,15 @@ export default function PlayerSizeTable({
                                   />
 
                                   DONE
-
                                 </label>
-
                               </div>
-
                             </div>
-
                           </td>
                         )
                       )}
 
                       {/* FINAL */}
                       <td className="p-2 border text-center">
-
                         <span
                           className={`px-4 py-2 rounded-xl font-bold ${
                             row.finalCheck
@@ -1136,23 +1159,15 @@ export default function PlayerSizeTable({
                             ? "COMPLETE"
                             : "PENDING"}
                         </span>
-
                       </td>
-
                     </tr>
                   )
                 )}
-
               </tbody>
-
             </table>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }
