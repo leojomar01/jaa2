@@ -49,10 +49,10 @@ export default function PlayerSizeTable({
   // =========================
   const sizeOptions = [
     "None",
-    "1-2",
-    "3-4",
-    "5-6",
-    "7-8",
+    "1-2 5XS",
+    "3-4 4XS",
+    "5-6 3XS",
+    "7-8 2XS ",
     "XS",
     "S",
     "M",

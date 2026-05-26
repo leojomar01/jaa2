@@ -99,6 +99,75 @@ router.get("/:id/players", async (req, res) => {
           "TASK NOT FOUND",
       });
     }
+    // =========================
+// UPDATE TASK
+// =========================
+router.put(
+  "/tasks/:id",
+  async (req, res) => {
+
+    try {
+
+      const {
+        customer,
+        messenger,
+        deadline,
+        image,
+      } = req.body;
+
+      // =========================
+      // FIND & UPDATE
+      // =========================
+      const updatedTask =
+        await Task.findByIdAndUpdate(
+          req.params.id,
+          {
+            customer,
+            messenger,
+            deadline,
+            image,
+          },
+          {
+            new: true,
+          }
+        );
+
+      // =========================
+      // NOT FOUND
+      // =========================
+      if (
+        !updatedTask
+      ) {
+
+        return res.status(404).json({
+          message:
+            "TASK NOT FOUND",
+        });
+      }
+
+      // =========================
+      // SUCCESS
+      // =========================
+      res.status(200).json({
+        message:
+          "TASK UPDATED SUCCESSFULLY",
+        task:
+          updatedTask,
+      });
+
+    } catch (error) {
+
+      console.log(
+        error
+      );
+
+      res.status(500).json({
+        message:
+          "SERVER ERROR",
+      });
+    }
+  }
+);
 
     // ========================================
     // SUCCESS

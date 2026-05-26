@@ -4,19 +4,29 @@ import React, {
 } from "react";
 
 import {
-  toast
+  toast,
 } from "react-toastify";
 
 export default function CreateTaskForm() {
-  const API_URL =
-  process.env.REACT_APP_API_URL;
 
-console.log(`${API_URL}/api/tasks`)
   // ==========================
-  // IMGBB API KEY
+  // API URL
   // ==========================
-  const API_KEY =
-    "62c9ef9c8ace9f2c24634768879355fa";
+  const API_URL =
+    process.env.REACT_APP_API_URL;
+
+  console.log(
+    `${API_URL}/api/tasks`
+  );
+
+  // ==========================
+  // CLOUDINARY
+  // ==========================
+  const CLOUD_NAME =
+    "dsmxrjr8s";
+
+  const UPLOAD_PRESET =
+    "ml_default";
 
   // ==========================
   // TODAY DATE
@@ -29,12 +39,14 @@ console.log(`${API_URL}/api/tasks`)
   // ==========================
   // FORM STATE
   // ==========================
-  const [formData, setFormData] =
-    useState({
-      customer: "",
-      messenger: "",
-      deadline: "",
-    });
+  const [
+    formData,
+    setFormData,
+  ] = useState({
+    customer: "",
+    messenger: "",
+    deadline: "",
+  });
 
   // ==========================
   // IMAGE STATE
@@ -102,13 +114,14 @@ console.log(`${API_URL}/api/tasks`)
         const file =
           item.getAsFile();
 
-        if (!file) return;
+        if (!file)
+          return;
 
         // SAVE FILE
         setImage(file);
 
         // ==========================
-        // CREATE PREVIEW
+        // PREVIEW
         // ==========================
         const localUrl =
           URL.createObjectURL(
@@ -138,6 +151,35 @@ console.log(`${API_URL}/api/tasks`)
   };
 
   // ==========================
+  // HANDLE FILE PICK
+  // ==========================
+  const handleFileChange = (
+    e
+  ) => {
+
+    const file =
+      e.target.files?.[0];
+
+    if (!file)
+      return;
+
+    setImage(file);
+
+    const localUrl =
+      URL.createObjectURL(
+        file
+      );
+
+    setPreview(
+      localUrl
+    );
+
+    setStatus(
+      "IMAGE READY TO UPLOAD."
+    );
+  };
+
+  // ==========================
   // UPLOAD IMAGE
   // ==========================
   const uploadImage =
@@ -146,7 +188,8 @@ console.log(`${API_URL}/api/tasks`)
       // ==========================
       // NO IMAGE
       // ==========================
-      if (!image) return "";
+      if (!image)
+        return "";
 
       try {
 
@@ -155,86 +198,61 @@ console.log(`${API_URL}/api/tasks`)
         );
 
         // ==========================
-        // CONVERT TO BASE64
+        // FORM DATA
         // ==========================
-        const base64 =
-          await new Promise(
-            (
-              resolve,
-              reject
-            ) => {
+        const formDataUpload =
+          new FormData();
 
-              const reader =
-                new FileReader();
+        formDataUpload.append(
+          "file",
+          image
+        );
 
-              reader.readAsDataURL(
-                image
-              );
-
-              reader.onload =
-                () => {
-
-                  const result =
-                    reader.result.split(
-                      ","
-                    )[1];
-
-                  resolve(
-                    result
-                  );
-                };
-
-              reader.onerror =
-                reject;
-            }
-          );
+        formDataUpload.append(
+          "upload_preset",
+          UPLOAD_PRESET
+        );
 
         // ==========================
-        // SEND TO IMGBB
+        // CLOUDINARY UPLOAD
         // ==========================
         const response =
           await fetch(
-            `https://api.imgbb.com/1/upload?key=${API_KEY}`,
+            `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
             {
               method:
                 "POST",
 
-              headers: {
-                "Content-Type":
-                  "application/x-www-form-urlencoded",
-              },
-
               body:
-                new URLSearchParams(
-                  {
-                    image:
-                      base64,
-                  }
-                ),
+                formDataUpload,
             }
           );
 
         const data =
           await response.json();
 
-        console.log(data);
+        console.log(
+          data
+        );
 
         // ==========================
         // SUCCESS
         // ==========================
         if (
-          data.success
+          data.secure_url
         ) {
 
           setImageUrl(
-            data.data.url
+            data.secure_url
           );
 
           setStatus(
             "IMAGE UPLOADED SUCCESSFULLY!"
           );
 
-          return data.data.url;
+          return (
+            data.secure_url
+          );
         }
 
         // ==========================
@@ -295,8 +313,8 @@ console.log(`${API_URL}/api/tasks`)
           ) {
 
             toast.error(
-                    "UPLOAD FAILED!"
-                  );
+              "UPLOAD FAILED!"
+            );
 
             setLoading(
               false
@@ -361,21 +379,24 @@ console.log(`${API_URL}/api/tasks`)
         // ==========================
         // CHECK RESPONSE
         // ==========================
-       if (!response.ok) {
+        if (
+          !response.ok
+        ) {
 
-  const errorData =
-    await response.json();
+          const errorData =
+            await response.json();
 
-  console.log(errorData);
+          console.log(
+            errorData
+          );
 
-  toast.error(
-    errorData.message ||
-    "FAILED TO SAVE"
-  );
+          toast.error(
+            errorData.message ||
+            "FAILED TO SAVE"
+          );
 
-  
-  return;
-}
+          return;
+        }
 
         const data =
           await response.json();
@@ -389,10 +410,14 @@ console.log(`${API_URL}/api/tasks`)
         // ==========================
         toast.success(
           "TASK CREATED SUCCESSFULLY!"
-        )
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        );
+
+        setTimeout(
+          () => {
+            window.location.reload();
+          },
+          1500
+        );
 
         // ==========================
         // RESET FORM
@@ -523,7 +548,6 @@ console.log(`${API_URL}/api/tasks`)
                 rounded-lg
                 outline-none
                 focus:border-cyan-400
-                uppercase
               "
             />
 
@@ -547,9 +571,9 @@ console.log(`${API_URL}/api/tasks`)
               ) =>
                 setFormData({
                   ...formData,
+
                   deadline:
-                    e.target
-                      .value,
+                    e.target.value,
                 })
               }
               min={today}
@@ -568,11 +592,11 @@ console.log(`${API_URL}/api/tasks`)
 
           </div>
 
-          {/* PASTE IMAGE */}
+          {/* IMAGE AREA */}
           <div>
 
             <label className="block text-slate-300 mb-2 font-semibold uppercase">
-              PASTE DESIGN IMAGE
+              PASTE OR SELECT DESIGN IMAGE
             </label>
 
             <div
@@ -608,6 +632,37 @@ console.log(`${API_URL}/api/tasks`)
               <p className="text-cyan-400 font-bold text-2xl mt-2 uppercase">
                 CTRL + V
               </p>
+
+              <p className="mt-4 uppercase">
+                OR
+              </p>
+
+              <label className="
+                inline-block
+                mt-4
+                bg-cyan-500
+                hover:bg-cyan-400
+                text-black
+                font-bold
+                px-5 py-3
+                rounded-lg
+                cursor-pointer
+                transition
+                uppercase
+              ">
+
+                SELECT IMAGE
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={
+                    handleFileChange
+                  }
+                  className="hidden"
+                />
+
+              </label>
 
             </div>
 

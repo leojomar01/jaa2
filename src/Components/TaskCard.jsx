@@ -42,6 +42,150 @@ export default function TaskCard({
   ] = useState(false);
 
   // =========================
+// SAVE EDIT TASK
+// =========================
+const handleEditSave =
+  async () => {
+
+    try {
+
+      // =========================
+      // GET INPUT VALUES
+      // =========================
+      const customer =
+        document.getElementById(
+          `edit-customer-${task?._id}`
+        ).value;
+
+      const messenger =
+        document.getElementById(
+          `edit-messenger-${task?._id}`
+        ).value;
+
+      const deadline =
+        document.getElementById(
+          `edit-deadline-${task?._id}`
+        ).value;
+
+      // =========================
+      // VALIDATION
+      // =========================
+      if (
+        !customer ||
+        !deadline
+      ) {
+
+        toast.error(
+          "PLEASE COMPLETE REQUIRED FIELDS"
+        );
+
+        return;
+      }
+
+      // =========================
+      // API REQUEST
+      // =========================
+      const response =
+        await fetch(
+          `${API_URL}/api/tasks/${task?._id}`,
+          {
+            method:
+              "PUT",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+
+                customer:
+                  customer.toUpperCase(),
+
+                messenger,
+
+                deadline,
+
+                image:
+                  task?.image || "",
+
+                status:
+                  task?.status || "LAYOUT",
+
+              }),
+          }
+        );
+
+      // =========================
+      // RESPONSE
+      // =========================
+      const data =
+        await response.json();
+
+      console.log(
+        data
+      );
+
+      // =========================
+      // FAILED
+      // =========================
+      if (
+        !response.ok
+      ) {
+
+        toast.error(
+          data.message ||
+          "FAILED TO UPDATE TASK"
+        );
+
+        return;
+      }
+
+      // =========================
+      // SUCCESS
+      // =========================
+      toast.success(
+        "TASK UPDATED SUCCESSFULLY"
+      );
+
+      // =========================
+      // CLOSE MODAL
+      // =========================
+      setShowEditModal(
+        false
+      );
+
+      // =========================
+      // REFRESH PAGE
+      // =========================
+      setTimeout(
+        () => {
+          window.location.reload();
+        },
+        1000
+      );
+
+    } catch (error) {
+
+      console.log(
+        error
+      );
+
+      toast.error(
+        "ERROR UPDATING TASK"
+      );
+    }
+  };
+  // =========================
+  // EDIT MODAL
+  // =========================
+  const [
+    showEditModal,
+    setShowEditModal,
+  ] = useState(false);
+
+  // =========================
   // API URL
   // =========================
   const API_URL =
@@ -52,7 +196,7 @@ export default function TaskCard({
   // =========================
   const imageLink =
     task?.image ||
-    "https://i.ibb.co/PZ5jY2Y3/47d89c92dea7.png";
+    "";
 
   // =========================
   // GC LINK
@@ -151,9 +295,6 @@ export default function TaskCard({
 
       try {
 
-        // =========================
-        // PASSWORD PROMPT
-        // =========================
         const {
           value:
             password,
@@ -161,8 +302,10 @@ export default function TaskCard({
           await Swal.fire({
             title:
               "DELETE TASK",
+
             text:
               `Enter password to delete "${customerName}"`,
+
             input:
               "password",
 
@@ -341,7 +484,7 @@ export default function TaskCard({
               {/* TITLE */}
               <h1
                 className="
-                  text-xl
+                  text-2xl
                   font-black
                   text-white
                   leading-tight
@@ -360,7 +503,7 @@ export default function TaskCard({
                     px-3 py-1
                     text-center
                     rounded-full
-                    bg-red-600
+                    bg-red-600/50
                     text-white
                     text-[15px]
                     font-black
@@ -506,7 +649,7 @@ export default function TaskCard({
               }
               className="
                 w-full
-                h-12
+                h-10
                 rounded-2xl
                 bg-cyan-500
                 hover:bg-cyan-400
@@ -585,6 +728,28 @@ export default function TaskCard({
               </button>
             )}
 
+            {/* EDIT */}
+            <button
+              onClick={() =>
+                setShowEditModal(
+                  true
+                )
+              }
+              className="
+                w-full
+                h-12
+                rounded-2xl
+                bg-yellow-500
+                hover:bg-yellow-400
+                text-black
+                font-black
+                transition-all
+                duration-200
+              "
+            >
+              EDIT TASK
+            </button>
+
             {/* DELETE */}
             <button
               onClick={
@@ -611,6 +776,297 @@ export default function TaskCard({
 
       </div>
 
+            {/* EDIT MODAL */}
+      {showEditModal && (
+
+        <div
+          className="
+            fixed
+            inset-0
+            z-50
+            bg-black/80
+            backdrop-blur-sm
+            flex
+            items-center
+            justify-center
+            p-4
+          "
+        >
+
+          <div
+            className="
+              w-full
+              max-w-2xl
+              bg-slate-900
+              border
+              border-slate-700
+              rounded-3xl
+              overflow-hidden
+            "
+          >
+
+            {/* HEADER */}
+            <div
+              className="
+                bg-gradient-to-r
+                from-yellow-500
+                to-orange-500
+                p-5
+                flex
+                items-center
+                justify-between
+              "
+            >
+
+              <h1
+                className="
+                  text-2xl
+                  font-black
+                  text-black
+                  uppercase
+                "
+              >
+                EDIT TASK
+              </h1>
+
+              <button
+                onClick={() =>
+                  setShowEditModal(
+                    false
+                  )
+                }
+                className="
+                  w-10
+                  h-10
+                  rounded-full
+                  bg-black/20
+                  hover:bg-black/30
+                  text-black
+                  text-xl
+                  font-bold
+                "
+              >
+                ✕
+              </button>
+
+            </div>
+
+            {/* BODY */}
+            <div className="p-6 space-y-5">
+
+              {/* CUSTOMER */}
+              <div>
+
+                <label
+                  className="
+                    block
+                    text-slate-300
+                    mb-2
+                    font-semibold
+                    uppercase
+                  "
+                >
+                  CUSTOMER NAME
+                </label>
+
+                <input
+                  id={`edit-customer-${task?._id}`}
+                  type="text"
+                  defaultValue={
+                    task?.customer
+                  }
+                  className="
+                    w-full
+                    bg-slate-800
+                    border
+                    border-slate-600
+                    text-white
+                    px-4
+                    py-3
+                    rounded-xl
+                    outline-none
+                    focus:border-yellow-400
+                    uppercase
+                  "
+                />
+
+              </div>
+
+              {/* GC LINK */}
+              <div>
+
+                <label
+                  className="
+                    block
+                    text-slate-300
+                    mb-2
+                    font-semibold
+                    uppercase
+                  "
+                >
+                  MESSENGER LINK
+                </label>
+
+                <input
+                  id={`edit-messenger-${task?._id}`}
+                  type="text"
+                  defaultValue={
+                    task?.messenger
+                  }
+                  className="
+                    w-full
+                    bg-slate-800
+                    border
+                    border-slate-600
+                    text-white
+                    px-4
+                    py-3
+                    rounded-xl
+                    outline-none
+                    focus:border-yellow-400
+                  "
+                />
+
+              </div>
+
+              {/* DEADLINE */}
+              <div>
+
+                <label
+                  className="
+                    block
+                    text-slate-300
+                    mb-2
+                    font-semibold
+                    uppercase
+                  "
+                >
+                  DEADLINE
+                </label>
+
+                <input
+                  id={`edit-deadline-${task?._id}`}
+                  type="date"
+                  defaultValue={
+                    task?.deadline
+                  }
+                  className="
+                    w-full
+                    bg-slate-800
+                    border
+                    border-slate-600
+                    text-white
+                    px-4
+                    py-3
+                    rounded-xl
+                    outline-none
+                    focus:border-yellow-400
+                  "
+                />
+
+              </div>
+
+              {/* IMAGE */}
+              <div>
+
+                <label
+                  className="
+                    block
+                    text-slate-300
+                    mb-2
+                    font-semibold
+                    uppercase
+                  "
+                >
+                  CURRENT IMAGE
+                </label>
+
+                <div
+                  className="
+                    rounded-2xl
+                    overflow-hidden
+                    border
+                    border-slate-700
+                    bg-slate-800
+                  "
+                >
+
+                  <img
+                    src={
+                      imageLink
+                    }
+                    alt={
+                      customerName
+                    }
+                    className="
+                      w-full
+                      max-h-[350px]
+                      object-contain
+                    "
+                  />
+
+                </div>
+
+              </div>
+
+              {/* BUTTONS */}
+              <div
+                className="
+                  grid
+                  grid-cols-2
+                  gap-4
+                  pt-2
+                "
+              >
+
+                {/* SAVE */}
+                <button
+                  onClick={
+                    handleEditSave
+                  }
+                  className="
+                    h-12
+                    rounded-2xl
+                    bg-yellow-500
+                    hover:bg-yellow-400
+                    text-black
+                    font-black
+                    transition-all
+                    duration-200
+                  "
+                >
+                  SAVE CHANGES
+                </button>
+
+                {/* CANCEL */}
+                <button
+                  onClick={() =>
+                    setShowEditModal(
+                      false
+                    )
+                  }
+                  className="
+                    h-12
+                    rounded-2xl
+                    bg-slate-700
+                    hover:bg-slate-600
+                    text-white
+                    font-black
+                    transition-all
+                    duration-200
+                  "
+                >
+                  CANCEL
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
       {/* PLAYER TABLE MODAL */}
       {showPlayerTable && (
 
