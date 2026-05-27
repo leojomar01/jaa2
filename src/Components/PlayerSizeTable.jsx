@@ -11,6 +11,9 @@ export default function PlayerSizeTable({
   taskId,
   CustomerName,
 }) {
+
+  const [teamImage, setTeamImage] =
+  useState("");
   // =========================
   // API URL
   // =========================
@@ -209,6 +212,8 @@ const [shortsFilter, setShortsFilter] =
             true
           );
 
+          
+
           const response =
             await fetch(
               `${API_URL}/api/tasks/${taskId}`
@@ -226,6 +231,9 @@ const [shortsFilter, setShortsFilter] =
 
           const data =
             await response.json();
+                    setTeamImage(
+          data.image || ""
+        );
 
           if (
             data.players &&
@@ -472,6 +480,12 @@ const [shortsFilter, setShortsFilter] =
       );
     };
 
+    const [warmerFilter, setWarmerFilter] =
+  useState("ALL");
+
+const [tshirtFilter, setTshirtFilter] =
+  useState("ALL");
+
   // =========================
   // SAVE
   // =========================
@@ -532,6 +546,9 @@ const [shortsFilter, setShortsFilter] =
         setLoading(false);
       }
     };
+
+
+    
       // =========================
   // PRINT TABLE LIST
   // =========================
@@ -663,6 +680,27 @@ const printTable = () => {
       </head>
 
       <body>
+      ${
+  teamImage
+    ? `
+      <div style="
+        text-align:center;
+        margin-bottom:20px;
+      
+      ">
+        <img
+          src="${teamImage}"
+          alt="Team Logo"
+          style="
+            max-width:250px;
+            max-height:250px;
+            object-fit:contain;
+          "
+        />
+      </div>
+    `
+    : ""
+}
 
         <h1>
           ${
@@ -770,31 +808,25 @@ const printTable = () => {
           originalIndex,
         })
       )
-      .filter((row) => {
+.filter((row) => {
 
   // REMOVE EMPTY ROW
   const isBlank =
-    row.surname.trim() ===
-      "" &&
-    row.number.trim() ===
-      "" &&
-    row.jersey ===
-      "None" &&
-    row.shorts ===
-      "None" &&
-    row.warmer ===
-      "None" &&
-    row.tshirt ===
-      "None";
+    row.surname.trim() === "" &&
+    row.number.trim() === "" &&
+    row.jersey === "None" &&
+    row.shorts === "None" &&
+    row.warmer === "None" &&
+    row.tshirt === "None";
 
   // HIDE BLANK ROW WHEN FILTERING
   if (
     isBlank &&
     (
-      jerseyFilter !==
-        "ALL" ||
-      shortsFilter !==
-        "ALL"
+      jerseyFilter !== "ALL" ||
+      shortsFilter !== "ALL" ||
+      warmerFilter !== "ALL" ||
+      tshirtFilter !== "ALL"
     )
   ) {
     return false;
@@ -802,20 +834,32 @@ const printTable = () => {
 
   // JERSEY FILTER
   if (
-    jerseyFilter !==
-      "ALL" &&
-    row.jersey !==
-      jerseyFilter
+    jerseyFilter !== "ALL" &&
+    row.jersey !== jerseyFilter
   ) {
     return false;
   }
 
   // SHORTS FILTER
   if (
-    shortsFilter !==
-      "ALL" &&
-    row.shorts !==
-      shortsFilter
+    shortsFilter !== "ALL" &&
+    row.shorts !== shortsFilter
+  ) {
+    return false;
+  }
+
+  // WARMER FILTER
+  if (
+    warmerFilter !== "ALL" &&
+    row.warmer !== warmerFilter
+  ) {
+    return false;
+  }
+
+  // TSHIRT FILTER
+  if (
+    tshirtFilter !== "ALL" &&
+    row.tshirt !== tshirtFilter
   ) {
     return false;
   }
@@ -876,6 +920,8 @@ const printTable = () => {
     sortBy,
     jerseyFilter,
     shortsFilter,
+    warmerFilter,
+    tshirtFilter,
   ]);
 
   return (
@@ -1028,6 +1074,7 @@ const printTable = () => {
             </select>
 
          {/* JERSEY FILTER */}
+{/* JERSEY FILTER */}
 <div className="flex flex-wrap gap-2 items-center">
 
   <span className="font-bold text-cyan-300">
@@ -1036,15 +1083,12 @@ const printTable = () => {
 
   <button
     onClick={() =>
-      setJerseyFilter(
-        "ALL"
-      )
+      setJerseyFilter("ALL")
     }
     className={`
       px-3 py-2 rounded-xl font-bold
       ${
-        jerseyFilter ===
-        "ALL"
+        jerseyFilter === "ALL"
           ? "bg-cyan-400 text-black"
           : "bg-[#223250]"
       }
@@ -1058,39 +1102,52 @@ const printTable = () => {
       (size) =>
         size !== "None"
     )
-    .map((size) => (
-      <button
-        key={size}
-        onClick={() =>
-          setJerseyFilter(
-            size
-          )
-        }
-        style={{
-          backgroundColor:
-            jerseyFilter ===
-            size
-              ? getSizeColor(
-                  size
-                )
-              : "#223250",
-          color:
-            jerseyFilter ===
-            size
-              ? "#000"
-              : "#fff",
-        }}
-        className="
-          px-3 py-2
-          rounded-xl
-          font-bold
-          border
-          border-cyan-500/20
-        "
-      >
-        {size}
-      </button>
-    ))}
+    .map((size) => {
+
+      const hasSize =
+        rows.some(
+          (row) =>
+            row.jersey === size
+        );
+
+      return (
+        <button
+          key={size}
+          disabled={!hasSize}
+          onClick={() =>
+            setJerseyFilter(size)
+          }
+          style={{
+            backgroundColor:
+              jerseyFilter === size
+                ? getSizeColor(size)
+                : "#223250",
+
+            color:
+              jerseyFilter === size
+                ? "#000"
+                : "#fff",
+
+            opacity:
+              hasSize ? 1 : 0.35,
+
+            cursor:
+              hasSize
+                ? "pointer"
+                : "not-allowed",
+          }}
+          className="
+            px-3 py-2
+            rounded-xl
+            font-bold
+            border
+            border-cyan-500/20
+          "
+        >
+          {size}
+        </button>
+      );
+    })}
 </div>
 
 {/* SHORTS FILTER */}
@@ -1102,15 +1159,12 @@ const printTable = () => {
 
   <button
     onClick={() =>
-      setShortsFilter(
-        "ALL"
-      )
+      setShortsFilter("ALL")
     }
     className={`
       px-3 py-2 rounded-xl font-bold
       ${
-        shortsFilter ===
-        "ALL"
+        shortsFilter === "ALL"
           ? "bg-pink-400 text-black"
           : "bg-[#223250]"
       }
@@ -1124,40 +1178,206 @@ const printTable = () => {
       (size) =>
         size !== "None"
     )
-    .map((size) => (
-      <button
-        key={size}
-        onClick={() =>
-          setShortsFilter(
-            size
-          )
-        }
-        style={{
-          backgroundColor:
-            shortsFilter ===
-            size
-              ? getSizeColor(
-                  size
-                )
-              : "#223250",
-          color:
-            shortsFilter ===
-            size
-              ? "#000"
-              : "#fff",
-        }}
-        className="
-          px-3 py-2
-          rounded-xl
-          font-bold
-          border
-          border-cyan-500/20
-        "
-      >
-        {size}
-      </button>
-    ))}
+    .map((size) => {
+
+      const hasSize =
+        rows.some(
+          (row) =>
+            row.shorts === size
+        );
+
+      return (
+        <button
+          key={size}
+          disabled={!hasSize}
+          onClick={() =>
+            setShortsFilter(size)
+          }
+          style={{
+            backgroundColor:
+              shortsFilter === size
+                ? getSizeColor(size)
+                : "#223250",
+
+            color:
+              shortsFilter === size
+                ? "#000"
+                : "#fff",
+
+            opacity:
+              hasSize ? 1 : 0.35,
+
+            cursor:
+              hasSize
+                ? "pointer"
+                : "not-allowed",
+          }}
+          className="
+            px-3 py-2
+            rounded-xl
+            font-bold
+            border
+            border-cyan-500/20
+          "
+        >
+          {size}
+        </button>
+      );
+    })}
 </div>
+
+{/* WARMER FILTER */}
+<div className="flex flex-wrap gap-2 items-center mt-3">
+
+  <span className="font-bold text-orange-300">
+    WARMER:
+  </span>
+
+  <button
+    onClick={() =>
+      setWarmerFilter("ALL")
+    }
+    className={`
+      px-3 py-2 rounded-xl font-bold
+      ${
+        warmerFilter === "ALL"
+          ? "bg-orange-400 text-black"
+          : "bg-[#223250]"
+      }
+    `}
+  >
+    ALL
+  </button>
+
+  {sizeOptions
+    .filter(
+      (size) =>
+        size !== "None"
+    )
+    .map((size) => {
+
+      const hasSize =
+        rows.some(
+          (row) =>
+            row.warmer === size
+        );
+
+      return (
+        <button
+          key={size}
+          disabled={!hasSize}
+          onClick={() =>
+            setWarmerFilter(size)
+          }
+          style={{
+            backgroundColor:
+              warmerFilter === size
+                ? getSizeColor(size)
+                : "#223250",
+
+            color:
+              warmerFilter === size
+                ? "#000"
+                : "#fff",
+
+            opacity:
+              hasSize ? 1 : 0.35,
+
+            cursor:
+              hasSize
+                ? "pointer"
+                : "not-allowed",
+          }}
+          className="
+            px-3 py-2
+            rounded-xl
+            font-bold
+            border
+            border-cyan-500/20
+          "
+        >
+          {size}
+        </button>
+      );
+    })}
+</div>
+
+{/* TSHIRT FILTER */}
+<div className="flex flex-wrap gap-2 items-center mt-3">
+
+  <span className="font-bold text-green-300">
+    TSHIRT:
+  </span>
+
+  <button
+    onClick={() =>
+      setTshirtFilter("ALL")
+    }
+    className={`
+      px-3 py-2 rounded-xl font-bold
+      ${
+        tshirtFilter === "ALL"
+          ? "bg-green-400 text-black"
+          : "bg-[#223250]"
+      }
+    `}
+  >
+    ALL
+  </button>
+
+  {sizeOptions
+    .filter(
+      (size) =>
+        size !== "None"
+    )
+    .map((size) => {
+
+      const hasSize =
+        rows.some(
+          (row) =>
+            row.tshirt === size
+        );
+
+      return (
+        <button
+          key={size}
+          disabled={!hasSize}
+          onClick={() =>
+            setTshirtFilter(size)
+          }
+          style={{
+            backgroundColor:
+              tshirtFilter === size
+                ? getSizeColor(size)
+                : "#223250",
+
+            color:
+              tshirtFilter === size
+                ? "#000"
+                : "#fff",
+
+            opacity:
+              hasSize ? 1 : 0.35,
+
+            cursor:
+              hasSize
+                ? "pointer"
+                : "not-allowed",
+          }}
+          className="
+            px-3 py-2
+            rounded-xl
+            font-bold
+            border
+            border-cyan-500/20
+          "
+        >
+          {size}
+        </button>
+      );
+    })}
+</div>
+
 
           </div>
 

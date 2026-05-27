@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import TaskTimeline from "./TaskTimeline";
 import StatusModal from "./StatusModal";
 import PlayerSizeTable from "./PlayerSizeTable";
@@ -9,6 +9,12 @@ import Swal from "sweetalert2";
 export default function TaskCard({
   task,
 }) {
+
+  // =========================
+  // API URL
+  // =========================
+  const API_URL =
+    process.env.REACT_APP_API_URL;
 
   // =========================
   // STATUS STATE
@@ -42,142 +48,6 @@ export default function TaskCard({
   ] = useState(false);
 
   // =========================
-// SAVE EDIT TASK
-// =========================
-const handleEditSave =
-  async () => {
-
-    try {
-
-      // =========================
-      // GET INPUT VALUES
-      // =========================
-      const customer =
-        document.getElementById(
-          `edit-customer-${task?._id}`
-        ).value;
-
-      const messenger =
-        document.getElementById(
-          `edit-messenger-${task?._id}`
-        ).value;
-
-      const deadline =
-        document.getElementById(
-          `edit-deadline-${task?._id}`
-        ).value;
-
-      // =========================
-      // VALIDATION
-      // =========================
-      if (
-        !customer ||
-        !deadline
-      ) {
-
-        toast.error(
-          "PLEASE COMPLETE REQUIRED FIELDS"
-        );
-
-        return;
-      }
-
-      // =========================
-      // API REQUEST
-      // =========================
-      const response =
-        await fetch(
-          `${API_URL}/api/tasks/${task?._id}`,
-          {
-            method:
-              "PUT",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body:
-              JSON.stringify({
-
-                customer:
-                  customer.toUpperCase(),
-
-                messenger,
-
-                deadline,
-
-                image:
-                  task?.image || "",
-
-                status:
-                  task?.status || "LAYOUT",
-
-              }),
-          }
-        );
-
-      // =========================
-      // RESPONSE
-      // =========================
-      const data =
-        await response.json();
-
-      console.log(
-        data
-      );
-
-      // =========================
-      // FAILED
-      // =========================
-      if (
-        !response.ok
-      ) {
-
-        toast.error(
-          data.message ||
-          "FAILED TO UPDATE TASK"
-        );
-
-        return;
-      }
-
-      // =========================
-      // SUCCESS
-      // =========================
-      toast.success(
-        "TASK UPDATED SUCCESSFULLY"
-      );
-
-      // =========================
-      // CLOSE MODAL
-      // =========================
-      setShowEditModal(
-        false
-      );
-
-      // =========================
-      // REFRESH PAGE
-      // =========================
-      setTimeout(
-        () => {
-          window.location.reload();
-        },
-        1000
-      );
-
-    } catch (error) {
-
-      console.log(
-        error
-      );
-
-      toast.error(
-        "ERROR UPDATING TASK"
-      );
-    }
-  };
-  // =========================
   // EDIT MODAL
   // =========================
   const [
@@ -186,17 +56,25 @@ const handleEditSave =
   ] = useState(false);
 
   // =========================
-  // API URL
+  // EDIT IMAGE
   // =========================
-  const API_URL =
-    process.env.REACT_APP_API_URL;
+  const [
+    editImage,
+    setEditImage,
+  ] = useState(
+    task?.image || ""
+  );
+
+  const [
+    uploadingImage,
+    setUploadingImage,
+  ] = useState(false);
 
   // =========================
   // IMAGE
   // =========================
   const imageLink =
-    task?.image ||
-    "";
+    task?.image || "";
 
   // =========================
   // GC LINK
@@ -286,6 +164,404 @@ const handleEditSave =
     deadlineText =
       "text-orange-300";
   }
+
+  // =========================
+  // IMAGE UPLOAD
+  // =========================
+    // =========================
+  // CLOUDINARY
+  // =========================
+  const CLOUD_NAME =
+    "dsmxrjr8s";
+
+  const UPLOAD_PRESET =
+    "ml_default";
+
+  // =========================
+  // IMAGE UPLOAD
+  // =========================
+  const handleEditImageUpload =
+    async (e) => {
+
+      const file =
+        e.target.files?.[0];
+
+      if (!file)
+        return;
+
+      try {
+
+        setUploadingImage(
+          true
+        );
+
+        // =========================
+        // FORM DATA
+        // =========================
+        const formData =
+          new FormData();
+
+        formData.append(
+          "file",
+          file
+        );
+
+        formData.append(
+          "upload_preset",
+          UPLOAD_PRESET
+        );
+
+        // =========================
+        // CLOUDINARY UPLOAD
+        // =========================
+        const response =
+          await fetch(
+            `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+            {
+              method:
+                "POST",
+
+              body:
+                formData,
+            }
+          );
+
+        const data =
+          await response.json();
+
+        console.log(data);
+
+        // =========================
+        // SUCCESS
+        // =========================
+        if (
+          data?.secure_url
+        ) {
+
+          setEditImage(
+            data.secure_url
+          );
+
+          toast.success(
+            "IMAGE UPLOADED"
+          );
+        }
+
+        // =========================
+        // FAILED
+        // =========================
+        else {
+
+          toast.error(
+            "UPLOAD FAILED"
+          );
+        }
+
+      } catch (error) {
+
+        console.log(
+          error
+        );
+
+        toast.error(
+          "ERROR UPLOADING IMAGE"
+        );
+
+      } finally {
+
+        setUploadingImage(
+          false
+        );
+      }
+    };
+
+      // =========================
+  // CTRL + V IMAGE PASTE
+  // =========================
+  useEffect(() => {
+
+    const handlePaste =
+      async (e) => {
+
+        // =========================
+        // ONLY INSIDE EDIT MODAL
+        // =========================
+        if (
+          !showEditModal
+        )
+          return;
+
+        const items =
+          e.clipboardData?.items;
+
+        if (!items)
+          return;
+
+        for (const item of items) {
+
+          // =========================
+          // IMAGE ONLY
+          // =========================
+          if (
+            !item.type.includes(
+              "image"
+            )
+          )
+            continue;
+
+          const file =
+            item.getAsFile();
+
+          if (!file)
+            return;
+
+          try {
+
+            setUploadingImage(
+              true
+            );
+
+            // =========================
+            // FORM DATA
+            // =========================
+            const formData =
+              new FormData();
+
+            formData.append(
+              "file",
+              file
+            );
+
+            formData.append(
+              "upload_preset",
+              UPLOAD_PRESET
+            );
+
+            // =========================
+            // CLOUDINARY
+            // =========================
+            const response =
+              await fetch(
+                `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+                {
+                  method:
+                    "POST",
+
+                  body:
+                    formData,
+                }
+              );
+
+            const data =
+              await response.json();
+
+            console.log(
+              data
+            );
+
+            // =========================
+            // SUCCESS
+            // =========================
+            if (
+              data?.secure_url
+            ) {
+
+              setEditImage(
+                data.secure_url
+              );
+
+              toast.success(
+                "IMAGE PASTED"
+              );
+            }
+
+            // =========================
+            // FAILED
+            // =========================
+            else {
+
+              toast.error(
+                "UPLOAD FAILED"
+              );
+            }
+
+          } catch (error) {
+
+            console.log(
+              error
+            );
+
+            toast.error(
+              "ERROR PASTING IMAGE"
+            );
+
+          } finally {
+
+            setUploadingImage(
+              false
+            );
+          }
+        }
+      };
+
+    window.addEventListener(
+      "paste",
+      handlePaste
+    );
+
+    return () => {
+
+      window.removeEventListener(
+        "paste",
+        handlePaste
+      );
+    };
+
+  }, [
+    showEditModal
+  ]);
+
+      // =========================
+  // PASTE IMAGE FROM CLIPBOARD
+  // =========================
+
+
+  // =========================
+  // SAVE EDIT TASK
+  // =========================
+  const handleEditSave =
+    async () => {
+
+      try {
+
+        // =========================
+        // GET INPUT VALUES
+        // =========================
+        const customer =
+          document.getElementById(
+            `edit-customer-${task?._id}`
+          ).value;
+
+        const messenger =
+          document.getElementById(
+            `edit-messenger-${task?._id}`
+          ).value;
+
+        const deadline =
+          document.getElementById(
+            `edit-deadline-${task?._id}`
+          ).value;
+
+        // =========================
+        // VALIDATION
+        // =========================
+        if (
+          !customer ||
+          !deadline
+        ) {
+
+          toast.error(
+            "PLEASE COMPLETE REQUIRED FIELDS"
+          );
+
+          return;
+        }
+
+        // =========================
+        // API REQUEST
+        // =========================
+        const response =
+          await fetch(
+            `${API_URL}/api/tasks/${task?._id}`,
+            {
+              method:
+                "PUT",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify({
+
+                  customer:
+                    customer.toUpperCase(),
+
+                  messenger,
+
+                  deadline,
+
+                  image:
+                    editImage || "",
+
+                  status:
+                    task?.status || "LAYOUT",
+
+                }),
+            }
+          );
+
+        // =========================
+        // RESPONSE
+        // =========================
+        const data =
+          await response.json();
+
+        console.log(
+          data
+        );
+
+        // =========================
+        // FAILED
+        // =========================
+        if (
+          !response.ok
+        ) {
+
+          toast.error(
+            data.message ||
+            "FAILED TO UPDATE TASK"
+          );
+
+          return;
+        }
+
+        // =========================
+        // SUCCESS
+        // =========================
+        toast.success(
+          "TASK UPDATED SUCCESSFULLY"
+        );
+
+        // =========================
+        // CLOSE MODAL
+        // =========================
+        setShowEditModal(
+          false
+        );
+
+        // =========================
+        // REFRESH PAGE
+        // =========================
+        setTimeout(
+          () => {
+            window.location.reload();
+          },
+          1000
+        );
+
+      } catch (error) {
+
+        console.log(
+          error
+        );
+
+        toast.error(
+          "ERROR UPDATING TASK"
+        );
+      }
+    };
 
   // =========================
   // DELETE TASK
@@ -495,8 +771,7 @@ const handleEditSave =
               </h1>
 
               {/* URGENT */}
-              {diffDays <=
-              3 ? (
+              {diffDays <= 3 ? (
                 <div
                   className="
                     mt-3
@@ -640,7 +915,6 @@ const handleEditSave =
             "
           >
 
-            {/* UPDATE */}
             <button
               onClick={() =>
                 setShowModal(
@@ -655,14 +929,11 @@ const handleEditSave =
                 hover:bg-cyan-400
                 text-black
                 font-black
-                transition-all
-                duration-200
               "
             >
               UPDATE STATUS
             </button>
 
-            {/* PLAYER TABLE */}
             <button
               onClick={() =>
                 setShowPlayerTable(
@@ -679,14 +950,11 @@ const handleEditSave =
                 border-cyan-400/30
                 text-cyan-300
                 font-black
-                transition-all
-                duration-200
               "
             >
               SIZE LIST
             </button>
 
-            {/* GC LINK */}
             {gcLink ? (
               <a
                 href={
@@ -702,8 +970,6 @@ const handleEditSave =
                   hover:bg-green-400
                   text-black
                   font-black
-                  transition-all
-                  duration-200
                   flex
                   items-center
                   justify-center
@@ -721,14 +987,12 @@ const handleEditSave =
                   bg-slate-700
                   text-slate-400
                   font-black
-                  cursor-not-allowed
                 "
               >
                 NO GC LINK
               </button>
             )}
 
-            {/* EDIT */}
             <button
               onClick={() =>
                 setShowEditModal(
@@ -743,14 +1007,11 @@ const handleEditSave =
                 hover:bg-yellow-400
                 text-black
                 font-black
-                transition-all
-                duration-200
               "
             >
               EDIT TASK
             </button>
 
-            {/* DELETE */}
             <button
               onClick={
                 handleDelete
@@ -763,8 +1024,6 @@ const handleEditSave =
                 hover:bg-red-400
                 text-white
                 font-black
-                transition-all
-                duration-200
               "
             >
               DELETE TASK
@@ -776,7 +1035,7 @@ const handleEditSave =
 
       </div>
 
-            {/* EDIT MODAL */}
+      {/* EDIT MODAL */}
       {showEditModal && (
 
         <div
@@ -840,7 +1099,6 @@ const handleEditSave =
                   h-10
                   rounded-full
                   bg-black/20
-                  hover:bg-black/30
                   text-black
                   text-xl
                   font-bold
@@ -884,15 +1142,12 @@ const handleEditSave =
                     px-4
                     py-3
                     rounded-xl
-                    outline-none
-                    focus:border-yellow-400
-                    uppercase
                   "
                 />
 
               </div>
 
-              {/* GC LINK */}
+              {/* GC */}
               <div>
 
                 <label
@@ -922,8 +1177,6 @@ const handleEditSave =
                     px-4
                     py-3
                     rounded-xl
-                    outline-none
-                    focus:border-yellow-400
                   "
                 />
 
@@ -959,8 +1212,6 @@ const handleEditSave =
                     px-4
                     py-3
                     rounded-xl
-                    outline-none
-                    focus:border-yellow-400
                   "
                 />
 
@@ -978,9 +1229,10 @@ const handleEditSave =
                     uppercase
                   "
                 >
-                  CURRENT IMAGE
+                  TASK IMAGE
                 </label>
 
+                {/* PREVIEW */}
                 <div
                   className="
                     rounded-2xl
@@ -988,12 +1240,13 @@ const handleEditSave =
                     border
                     border-slate-700
                     bg-slate-800
+                    mb-4
                   "
                 >
 
                   <img
                     src={
-                      imageLink
+                      editImage
                     }
                     alt={
                       customerName
@@ -1007,6 +1260,39 @@ const handleEditSave =
 
                 </div>
 
+                {/* FILE INPUT */}
+                <label
+                  className="
+                    w-full
+                    h-12
+                    rounded-2xl
+                    bg-cyan-500
+                    hover:bg-cyan-400
+                    text-black
+                    font-black
+                    flex
+                    items-center
+                    justify-center
+                    cursor-pointer
+                  "
+                >
+
+                  {uploadingImage
+                    ? "UPLOADING..."
+                    : "UPLOAD NEW IMAGE"}
+
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={
+                      handleEditImageUpload
+                    }
+                  />
+
+                </label>
+ 
+
               </div>
 
               {/* BUTTONS */}
@@ -1019,7 +1305,6 @@ const handleEditSave =
                 "
               >
 
-                {/* SAVE */}
                 <button
                   onClick={
                     handleEditSave
@@ -1031,14 +1316,11 @@ const handleEditSave =
                     hover:bg-yellow-400
                     text-black
                     font-black
-                    transition-all
-                    duration-200
                   "
                 >
                   SAVE CHANGES
                 </button>
 
-                {/* CANCEL */}
                 <button
                   onClick={() =>
                     setShowEditModal(
@@ -1052,8 +1334,6 @@ const handleEditSave =
                     hover:bg-slate-600
                     text-white
                     font-black
-                    transition-all
-                    duration-200
                   "
                 >
                   CANCEL
@@ -1067,7 +1347,8 @@ const handleEditSave =
 
         </div>
       )}
-      {/* PLAYER TABLE MODAL */}
+
+      {/* PLAYER TABLE */}
       {showPlayerTable && (
 
         <div
@@ -1081,7 +1362,6 @@ const handleEditSave =
           "
         >
 
-          {/* CLOSE */}
           <button
             onClick={() =>
               setShowPlayerTable(
@@ -1094,20 +1374,17 @@ const handleEditSave =
               right-4
               z-50
               bg-red-500
-              hover:bg-red-400
               text-white
               w-12
               h-12
               rounded-full
               text-2xl
               font-bold
-              shadow-xl
             "
           >
             ✕
           </button>
 
-          {/* TABLE */}
           <PlayerSizeTable
             taskId={
               task?._id
@@ -1165,7 +1442,6 @@ const handleEditSave =
               "
             />
 
-            {/* CLOSE */}
             <button
               onClick={() =>
                 setZoomImage(
@@ -1180,11 +1456,9 @@ const handleEditSave =
                 h-10
                 rounded-full
                 bg-white/20
-                hover:bg-white/30
                 text-white
                 text-xl
                 font-bold
-                backdrop-blur-md
               "
             >
               ✕
