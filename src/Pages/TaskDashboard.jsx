@@ -14,6 +14,16 @@ import "react-toastify/dist/ReactToastify.css";
 import DashboardHeader from "../Components/DashboardHeader";
 import TaskCard from "../Components/TaskCard";
 import CreateTaskForm from "../Components/CreateTaskForm";
+  // =========================
+  // STATUS ORDER
+  // =========================
+  const statusOrder = [
+    "LAYOUT",
+    "PRINTING",
+    "SEWING",
+    "CHECKING",
+    "COMPLETE",
+  ];
 
 export default function TaskDashboard() {
 
@@ -47,16 +57,7 @@ export default function TaskDashboard() {
   const [sortBy, setSortBy] =
     useState("date");
 
-  // =========================
-  // STATUS ORDER
-  // =========================
-  const statusOrder = [
-    "LAYOUT",
-    "PRINT",
-    "SEW",
-    "CHECK",
-    "DONE",
-  ];
+
 
   // =========================
   // FETCH TASKS

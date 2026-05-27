@@ -673,7 +673,7 @@ const handleEditSave =
                 w-full
                 h-12
                 rounded-2xl
-                bg-white/10
+                bg-green-600/60
                 hover:bg-white/20
                 border
                 border-cyan-400/30
@@ -683,7 +683,7 @@ const handleEditSave =
                 duration-200
               "
             >
-              OPEN SIZE TABLE
+              SIZE LIST
             </button>
 
             {/* GC LINK */}
@@ -698,9 +698,9 @@ const handleEditSave =
                   w-full
                   h-12
                   rounded-2xl
-                  bg-green-500
+                  bg-white/90
                   hover:bg-green-400
-                  text-white
+                  text-black
                   font-black
                   transition-all
                   duration-200
