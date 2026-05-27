@@ -52,7 +52,7 @@ export default function PlayerSizeTable({
     "1-2 5XS",
     "3-4 4XS",
     "5-6 3XS",
-    "7-8 2XS ",
+    "7-8 2XS",
     "XS",
     "S",
     "M",
@@ -79,8 +79,11 @@ export default function PlayerSizeTable({
   const [sortBy, setSortBy] =
     useState("none");
 
-  const [sizeFilter, setSizeFilter] =
-    useState("ALL");
+ const [jerseyFilter, setJerseyFilter] =
+  useState("ALL");
+
+const [shortsFilter, setShortsFilter] =
+  useState("ALL");
 
   const [activeRow, setActiveRow] =
     useState(null);
@@ -94,10 +97,10 @@ export default function PlayerSizeTable({
     const colors = {
       None: "#e5e7eb",
 
-      "1-2": "#fde68a",
-      "3-4": "#fcd34d",
-      "5-6": "#86efac",
-      "7-8": "#67e8f9",
+      "1-2 5XS": "#fde68a",
+      "3-4 4XS": "#fcd34d",
+      "5-6 3XS": "#86efac",
+      "7-8 2XS": "#67e8f9",
 
       XS: "#d8b4fe",
       S: "#c4b5fd",
@@ -345,7 +348,7 @@ export default function PlayerSizeTable({
   // UPDATE FIELD
   // =========================
   const updateField = (
-    index,
+    originalIndex,
     field,
     value
   ) => {
@@ -356,14 +359,15 @@ export default function PlayerSizeTable({
             ...prevRows,
           ];
 
-        updatedRows[index] =
-          {
-            ...updatedRows[
-              index
-            ],
-            [field]:
-              value,
-          };
+        updatedRows[
+          originalIndex
+        ] = {
+          ...updatedRows[
+            originalIndex
+          ],
+          [field]:
+            value,
+        };
 
         // RESET CHECKBOXES
         if (
@@ -380,7 +384,7 @@ export default function PlayerSizeTable({
         ) {
           resetChecks(
             updatedRows[
-              index
+              originalIndex
             ],
             field
           );
@@ -388,21 +392,23 @@ export default function PlayerSizeTable({
 
         // RECALCULATE FINAL
         updatedRows[
-          index
+          originalIndex
         ].finalCheck =
           calculateFinalCheck(
             updatedRows[
-              index
+              originalIndex
             ]
           );
 
         // AUTO ADD ROW
         const isLastRow =
-          index ===
+          originalIndex ===
           updatedRows.length - 1;
 
         const row =
-          updatedRows[index];
+          updatedRows[
+            originalIndex
+          ];
 
         const hasData =
           row.surname.trim() !==
@@ -427,7 +433,7 @@ export default function PlayerSizeTable({
           );
         }
 
-        // AUTO SAVE CHECKBOX
+        // AUTO SAVE
         if (
           field.includes(
             "Check"
@@ -559,111 +565,134 @@ export default function PlayerSizeTable({
   // =========================
   // SORT + FILTER
   // =========================
-  const processedRows =
-    useMemo(() => {
-      return [...rows]
-        .filter(
-          (
-            row,
-            index
-          ) => {
-            const isLastRow =
-              index ===
-              rows.length - 1;
+ const processedRows =
+  useMemo(() => {
+    return rows
+      .map(
+        (
+          row,
+          originalIndex
+        ) => ({
+          ...row,
+          originalIndex,
+        })
+      )
+      .filter((row) => {
 
-            if (
-              isLastRow
-            )
-              return true;
+  // REMOVE EMPTY ROW
+  const isBlank =
+    row.surname.trim() ===
+      "" &&
+    row.number.trim() ===
+      "" &&
+    row.jersey ===
+      "None" &&
+    row.shorts ===
+      "None" &&
+    row.warmer ===
+      "None" &&
+    row.tshirt ===
+      "None";
 
-            if (
-              sizeFilter !==
-              "ALL"
-            ) {
-              const hasSize =
-                row.jersey ===
-                  sizeFilter ||
-                row.shorts ===
-                  sizeFilter ||
-                row.warmer ===
-                  sizeFilter ||
-                row.tshirt ===
-                  sizeFilter;
+  // HIDE BLANK ROW WHEN FILTERING
+  if (
+    isBlank &&
+    (
+      jerseyFilter !==
+        "ALL" ||
+      shortsFilter !==
+        "ALL"
+    )
+  ) {
+    return false;
+  }
 
-              if (
-                !hasSize
+  // JERSEY FILTER
+  if (
+    jerseyFilter !==
+      "ALL" &&
+    row.jersey !==
+      jerseyFilter
+  ) {
+    return false;
+  }
+
+  // SHORTS FILTER
+  if (
+    shortsFilter !==
+      "ALL" &&
+    row.shorts !==
+      shortsFilter
+  ) {
+    return false;
+  }
+
+  return true;
+})
+      .sort(
+        (
+          a,
+          b
+        ) => {
+          const aEmpty =
+            a.surname ===
+              "" &&
+            a.number ===
+              "";
+
+          const bEmpty =
+            b.surname ===
+              "" &&
+            b.number ===
+              "";
+
+          if (aEmpty)
+            return 1;
+
+          if (bEmpty)
+            return -1;
+
+          if (
+            sortBy ===
+            "name"
+          ) {
+            return a.surname.localeCompare(
+              b.surname
+            );
+          }
+
+          if (
+            sortBy ===
+            "number"
+          ) {
+            return (
+              Number(
+                a.number
+              ) -
+              Number(
+                b.number
               )
-                return false;
-            }
-
-            return true;
+            );
           }
-        )
-        .sort(
-          (
-            a,
-            b
-          ) => {
-            const aEmpty =
-              a.surname ===
-                "" &&
-              a.number ===
-                "";
 
-            const bEmpty =
-              b.surname ===
-                "" &&
-              b.number ===
-                "";
-
-            if (
-              aEmpty
-            )
-              return 1;
-
-            if (
-              bEmpty
-            )
-              return -1;
-
-            if (
-              sortBy ===
-              "name"
-            ) {
-              return a.surname.localeCompare(
-                b.surname
-              );
-            }
-
-            if (
-              sortBy ===
-              "number"
-            ) {
-              return (
-                Number(
-                  a.number
-                ) -
-                Number(
-                  b.number
-                )
-              );
-            }
-
-            return 0;
-          }
-        );
-    }, [
-      rows,
-      sortBy,
-      sizeFilter,
-    ]);
+          return 0;
+        }
+      );
+  }, [
+    rows,
+    sortBy,
+    jerseyFilter,
+    shortsFilter,
+  ]);
 
   return (
     <div className="min-h-screen bg-[#020b2d] p-4 text-white">
       <div className="max-w-7xl mx-auto bg-[#1b2945] rounded-3xl overflow-hidden shadow-2xl border border-cyan-500/20">
+
         {/* HEADER */}
         <div className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-5">
           <div className="flex items-center justify-between flex-wrap gap-3">
+
             <h1 className="text-3xl font-extrabold">
               {CustomerName ||
                 "Customer"}{" "}
@@ -671,6 +700,7 @@ export default function PlayerSizeTable({
             </h1>
 
             <div className="flex gap-3">
+
               <button
                 onClick={
                   loadPlayerData
@@ -716,17 +746,18 @@ export default function PlayerSizeTable({
               >
                 {loading
                   ? "SAVING..."
-                  : loadingData
-                  ? "LOADING..."
                   : "SAVE"}
               </button>
+
             </div>
           </div>
         </div>
 
         <div className="p-3">
+
           {/* ACTIONS */}
           <div className="flex flex-wrap gap-3 mb-4">
+
             <button
               onClick={() =>
                 setRows([
@@ -790,45 +821,148 @@ export default function PlayerSizeTable({
               </option>
             </select>
 
-            <select
-              value={
-                sizeFilter
-              }
-              onChange={(e) =>
-                setSizeFilter(
-                  e.target.value
-                )
-              }
-              className="
-                px-4 py-2
-                rounded-xl
-                bg-pink-400
-                text-black
-                font-bold
-              "
-            >
-              <option value="ALL">
-                ALL SIZES
-              </option>
+         {/* JERSEY FILTER */}
+<div className="flex flex-wrap gap-2 items-center">
 
-              {sizeOptions.map(
-                (size) => (
-                  <option
-                    key={size}
-                    value={size}
-                  >
-                    {size}
-                  </option>
+  <span className="font-bold text-cyan-300">
+    JERSEY:
+  </span>
+
+  <button
+    onClick={() =>
+      setJerseyFilter(
+        "ALL"
+      )
+    }
+    className={`
+      px-3 py-2 rounded-xl font-bold
+      ${
+        jerseyFilter ===
+        "ALL"
+          ? "bg-cyan-400 text-black"
+          : "bg-[#223250]"
+      }
+    `}
+  >
+    ALL
+  </button>
+
+  {sizeOptions
+    .filter(
+      (size) =>
+        size !== "None"
+    )
+    .map((size) => (
+      <button
+        key={size}
+        onClick={() =>
+          setJerseyFilter(
+            size
+          )
+        }
+        style={{
+          backgroundColor:
+            jerseyFilter ===
+            size
+              ? getSizeColor(
+                  size
                 )
-              )}
-            </select>
+              : "#223250",
+          color:
+            jerseyFilter ===
+            size
+              ? "#000"
+              : "#fff",
+        }}
+        className="
+          px-3 py-2
+          rounded-xl
+          font-bold
+          border
+          border-cyan-500/20
+        "
+      >
+        {size}
+      </button>
+    ))}
+</div>
+
+{/* SHORTS FILTER */}
+<div className="flex flex-wrap gap-2 items-center mt-3">
+
+  <span className="font-bold text-pink-300">
+    SHORTS:
+  </span>
+
+  <button
+    onClick={() =>
+      setShortsFilter(
+        "ALL"
+      )
+    }
+    className={`
+      px-3 py-2 rounded-xl font-bold
+      ${
+        shortsFilter ===
+        "ALL"
+          ? "bg-pink-400 text-black"
+          : "bg-[#223250]"
+      }
+    `}
+  >
+    ALL
+  </button>
+
+  {sizeOptions
+    .filter(
+      (size) =>
+        size !== "None"
+    )
+    .map((size) => (
+      <button
+        key={size}
+        onClick={() =>
+          setShortsFilter(
+            size
+          )
+        }
+        style={{
+          backgroundColor:
+            shortsFilter ===
+            size
+              ? getSizeColor(
+                  size
+                )
+              : "#223250",
+          color:
+            shortsFilter ===
+            size
+              ? "#000"
+              : "#fff",
+        }}
+        className="
+          px-3 py-2
+          rounded-xl
+          font-bold
+          border
+          border-cyan-500/20
+        "
+      >
+        {size}
+      </button>
+    ))}
+</div>
+
           </div>
 
           {/* TABLE */}
           <div className="overflow-x-auto rounded-2xl border border-cyan-500/20">
+
             <table className="w-full min-w-[1150px] border-collapse text-sm">
+
               <thead>
                 <tr className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white">
+
                   <th className="p-2 border">
                     No.
                   </th>
@@ -860,55 +994,64 @@ export default function PlayerSizeTable({
                   <th className="p-2 border">
                     Final
                   </th>
+
                 </tr>
               </thead>
 
               <tbody>
+
                 {processedRows.map(
                   (
                     row,
-                    index
+                    displayIndex
                   ) => (
                     <tr
-  key={index}
-  className={`
-    ${
-      row.finalCheck
-        ? "bg-green-600/80 text-white"
-        : activeRow === index
-        ? "bg-blue-500/50"
-        : index % 2 === 0
-        ? "bg-[#1b2945]"
-        : "bg-[#223250]"
-    }
+                      key={
+                        row.originalIndex
+                      }
+                      className={`
+                        ${
+                          row.finalCheck
+                            ? "bg-green-600/80 text-white"
+                            : activeRow ===
+                              row.originalIndex
+                            ? "bg-blue-500/50"
+                            : displayIndex %
+                                2 ===
+                              0
+                            ? "bg-[#1b2945]"
+                            : "bg-[#223250]"
+                        }
 
-    hover:bg-blue-500/70
-    transition-all
-    duration-200
-  `}
->
+                        hover:bg-blue-500/70
+                        transition-all
+                        duration-200
+                      `}
+                    >
+
                       {/* NO */}
                       <td className="p-2 border text-center">
-                        {index + 1}
+                        {displayIndex + 1}
                       </td>
 
                       {/* SURNAME */}
                       <td className="p-2 border">
                         <div className="flex gap-2">
+
                           <input
                             value={
                               row.surname
                             }
                             onFocus={() =>
                               setActiveRow(
-                                index
+                                row.originalIndex
                               )
                             }
                             onChange={(
                               e
                             ) =>
                               updateField(
-                                index,
+                                row.originalIndex,
                                 "surname",
                                 e.target.value.toUpperCase()
                               )
@@ -933,32 +1076,35 @@ export default function PlayerSizeTable({
                               px-3
                               rounded-lg
                               bg-cyan-400
+                              hover:bg-cyan-300
                               text-black
                               font-bold
                             "
                           >
                             COPY
                           </button>
+
                         </div>
                       </td>
 
                       {/* NUMBER */}
                       <td className="p-2 border">
                         <div className="flex gap-2">
+
                           <input
                             value={
                               row.number
                             }
                             onFocus={() =>
                               setActiveRow(
-                                index
+                                row.originalIndex
                               )
                             }
                             onChange={(
                               e
                             ) =>
                               updateField(
-                                index,
+                                row.originalIndex,
                                 "number",
                                 e.target.value
                               )
@@ -983,12 +1129,14 @@ export default function PlayerSizeTable({
                               px-3
                               rounded-lg
                               bg-cyan-400
+                              hover:bg-cyan-300
                               text-black
                               font-bold
                             "
                           >
                             COPY
                           </button>
+
                         </div>
                       </td>
 
@@ -1004,6 +1152,7 @@ export default function PlayerSizeTable({
                             className="p-2 border"
                           >
                             <div className="flex flex-col gap-2 items-center">
+
                               <select
                                 value={
                                   row[
@@ -1012,14 +1161,14 @@ export default function PlayerSizeTable({
                                 }
                                 onFocus={() =>
                                   setActiveRow(
-                                    index
+                                    row.originalIndex
                                   )
                                 }
                                 onChange={(
                                   e
                                 ) =>
                                   updateField(
-                                    index,
+                                    row.originalIndex,
                                     field,
                                     e.target.value
                                   )
@@ -1062,8 +1211,10 @@ export default function PlayerSizeTable({
                               </select>
 
                               <div className="flex gap-2 text-xs">
+
                                 {/* PRINT */}
                                 <label className="flex items-center gap-1">
+
                                   <input
                                     type="checkbox"
                                     disabled={
@@ -1084,14 +1235,14 @@ export default function PlayerSizeTable({
                                     }
                                     onFocus={() =>
                                       setActiveRow(
-                                        index
+                                        row.originalIndex
                                       )
                                     }
                                     onChange={(
                                       e
                                     ) =>
                                       updateField(
-                                        index,
+                                        row.originalIndex,
                                         printField,
                                         e.target.checked
                                       )
@@ -1103,6 +1254,7 @@ export default function PlayerSizeTable({
 
                                 {/* DONE */}
                                 <label className="flex items-center gap-1">
+
                                   <input
                                     type="checkbox"
                                     disabled={
@@ -1123,14 +1275,14 @@ export default function PlayerSizeTable({
                                     }
                                     onFocus={() =>
                                       setActiveRow(
-                                        index
+                                        row.originalIndex
                                       )
                                     }
                                     onChange={(
                                       e
                                     ) =>
                                       updateField(
-                                        index,
+                                        row.originalIndex,
                                         checkField,
                                         e.target.checked
                                       )
@@ -1139,6 +1291,7 @@ export default function PlayerSizeTable({
 
                                   DONE
                                 </label>
+
                               </div>
                             </div>
                           </td>
@@ -1147,6 +1300,7 @@ export default function PlayerSizeTable({
 
                       {/* FINAL */}
                       <td className="p-2 border text-center">
+
                         <span
                           className={`px-4 py-2 rounded-xl font-bold ${
                             row.finalCheck
@@ -1158,12 +1312,17 @@ export default function PlayerSizeTable({
                             ? "COMPLETE"
                             : "PENDING"}
                         </span>
+
                       </td>
+
                     </tr>
                   )
                 )}
+
               </tbody>
+
             </table>
+
           </div>
         </div>
       </div>
