@@ -123,19 +123,19 @@ export default function TaskDashboard() {
           // =========================
           // SORT BY DATE
           // =========================
-          if (
-            sortBy === "date"
-          ) {
+         if (
+  sortBy === "date"
+) {
 
-            return (
-              new Date(
-                a?.deadline || 0
-              ) -
-              new Date(
-                b?.deadline || 0
-              )
-            );
-          }
+  return (
+    new Date(
+      b?.createdAt || 0
+    ) -
+    new Date(
+      a?.createdAt || 0
+    )
+  );
+}
 
           // =========================
           // SORT BY TITLE
