@@ -532,6 +532,199 @@ const [shortsFilter, setShortsFilter] =
         setLoading(false);
       }
     };
+      // =========================
+  // PRINT TABLE LIST
+  // =========================
+ // =========================
+// PRINT TABLE LIST
+// =========================
+const printTable = () => {
+
+  const printableRows =
+    processedRows.filter(
+      (row) => !(
+        row.surname.trim() === "" &&
+        row.number.trim() === ""
+      )
+    );
+
+  // CHECK WHICH SIZE COLUMNS HAVE DATA
+  const showJersey =
+    printableRows.some(
+      (row) =>
+        row.jersey !== "None"
+    );
+
+  const showShorts =
+    printableRows.some(
+      (row) =>
+        row.shorts !== "None"
+    );
+
+  const showWarmer =
+    printableRows.some(
+      (row) =>
+        row.warmer !== "None"
+    );
+
+  const showTshirt =
+    printableRows.some(
+      (row) =>
+        row.tshirt !== "None"
+    );
+
+  const printWindow =
+    window.open(
+      "",
+      "",
+      "width=1200,height=800"
+    );
+
+  const tableRows =
+    printableRows
+      .map(
+        (
+          row,
+          index
+        ) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${row.surname}</td>
+          <td>${row.number}</td>
+
+          ${
+            showJersey
+              ? `<td>${row.jersey === "None" ? "" : row.jersey}</td>`
+              : ""
+          }
+
+          ${
+            showShorts
+              ? `<td>${row.shorts === "None" ? "" : row.shorts}</td>`
+              : ""
+          }
+
+          ${
+            showWarmer
+              ? `<td>${row.warmer === "None" ? "" : row.warmer}</td>`
+              : ""
+          }
+
+          ${
+            showTshirt
+              ? `<td>${row.tshirt === "None" ? "" : row.tshirt}</td>`
+              : ""
+          }
+        </tr>
+      `
+      )
+      .join("");
+
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>
+          ${CustomerName} Size List
+        </title>
+
+        <style>
+          body {
+            font-family: Arial;
+            padding: 20px;
+          }
+
+          h1 {
+            text-align: center;
+            margin-bottom: 20px;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+
+          th,
+          td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            font-size: 12px;
+          }
+
+          th {
+            background: #0ea5e9;
+            color: white;
+          }
+
+          tr:nth-child(even) {
+            background: #f3f4f6;
+          }
+        </style>
+      </head>
+
+      <body>
+
+        <h1>
+          ${
+            CustomerName ||
+            "Customer"
+          } Size List
+        </h1>
+
+        <table>
+
+          <thead>
+            <tr>
+
+              <th>No.</th>
+              <th>Surname</th>
+              <th>Number</th>
+
+              ${
+                showJersey
+                  ? "<th>Jersey</th>"
+                  : ""
+              }
+
+              ${
+                showShorts
+                  ? "<th>Shorts</th>"
+                  : ""
+              }
+
+              ${
+                showWarmer
+                  ? "<th>Warmer</th>"
+                  : ""
+              }
+
+              ${
+                showTshirt
+                  ? "<th>T-Shirt</th>"
+                  : ""
+              }
+
+            </tr>
+          </thead>
+
+          <tbody>
+            ${tableRows}
+          </tbody>
+
+        </table>
+
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+
+  printWindow.focus();
+
+  setTimeout(() => {
+    printWindow.print();
+  }, 500);
+};
 
   // =========================
   // SIZE FIELDS
@@ -792,6 +985,19 @@ const [shortsFilter, setShortsFilter] =
             >
               CLEAR BLANK
             </button>
+            <button
+  onClick={printTable}
+  className="
+    px-4 py-2
+    rounded-xl
+    bg-yellow-400
+    hover:bg-yellow-300
+    text-black
+    font-bold
+  "
+>
+  PRINT LIST
+</button>
 
             <select
               value={sortBy}
